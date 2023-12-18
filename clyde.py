@@ -70,4 +70,4 @@ class Clyde(discord.Client):
 
 
 client = Clyde(max_messages=None, chunk_guilds_at_startup=False)
-client.run("MTE3NjE5NzczNTEwNDM4OTE3MA.Gjnxzs.iv_DB3BXULJNwhufKHx7klfzmzoBRJfAt8vb_M")
+client.run("TOKEN_GOES_HERE")
