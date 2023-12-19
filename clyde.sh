@@ -1,4 +1,4 @@
-deactivate
-source /root/runner/public/clyde/clyde-venv/bin/activate
+#!/bin/zsh
+echo "Starting up Clyde..."
 python api.py &!
 python clyde.py
