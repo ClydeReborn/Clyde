@@ -1,8 +1,6 @@
 import g4f
 
 from flask import Flask, jsonify, request
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
 app = Flask("ClydeAPI")
 
