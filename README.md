@@ -10,18 +10,17 @@ the name for this bot is "Sakoma" suggested by 3177
 ### programming language's
 its using python for the bot and Shell for launching
 ### AI model
-its using the Bing AI model based on GPT4 (better than clyde which used GPT3.5)
+its using the phind model currently, you can swap it for bing if you're not getting a captcha verification
 
 # Build
 firstly clone this repo
-```
-git clone https://github.com/debarkak/clyde,git
+```sh
+git clone https://github.com/debarkak/clyde.git
 ```
 
 then install python and required python modules
-
-```
-pip install -U g4f httpx
+```sh
+pip install -U g4f flask httpx
 ```
 
 then edit the `clyde.py` file and modify this line
@@ -32,10 +31,10 @@ client.run("TOKEN_GOES_HERE")
 in `"TOKEN_GOES_HERE"` replace this text with your token and remove the quotes (dont remove the brackets)
 
 ###
-after that run `python test_clyde.py` to test the bot, if it works then run `chmod +x clyde.sh` then run `./clyde.sh` to run the bot. Now enjoy!
+after that run `python test_clyde.py` to check working providers, if it works then run `chmod +x clyde.sh` then run `./clyde.sh` to run the bot. Now enjoy!
 
 # note
-* you MUST use a normal discord account, NOT a discord bot account
+* you MUST use a normal discord account, NOT a discord bot account (a bot version is coming soon:tm:)
 * currently you cannot run this bot in windows or other OS, only in Linux (recomended linux distros are Arch, Fedora and Debian)
 
 
