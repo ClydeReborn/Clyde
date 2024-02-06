@@ -1,0 +1,5 @@
+discord.py-self
+g4f
+dotenv
+httpx
+flask[async]

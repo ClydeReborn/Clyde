@@ -4,7 +4,9 @@ import random
 
 import discord
 import httpx
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class Clyde(discord.Client):
     async def on_connect(self):
@@ -68,5 +70,5 @@ class Clyde(discord.Client):
 
 client = Clyde(max_messages=None, chunk_guilds_at_startup=False)
 client.run(
-    "<TOKEN_GOES_HERE>"
+    os.getenv("TOKEN")
 )  # be careful with posting a token here
