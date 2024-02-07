@@ -13,7 +13,9 @@ def test_provider(provider):
             print(f"\033[95mTesting {provider.__name__} without a system prompt")
             completion = ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": system_prompt + "hi who are you"}],
+                messages=[
+                    {"role": "user", "content": system_prompt + "hi who are you"}
+                ],
                 provider=provider,
             )
             return completion, provider.__name__

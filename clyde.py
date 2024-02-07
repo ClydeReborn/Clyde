@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import random
 
 import discord
@@ -7,6 +8,7 @@ import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 class Clyde(discord.Client):
     async def on_connect(self):
@@ -36,6 +38,7 @@ class Clyde(discord.Client):
             or message.channel.type
             == discord.ChannelType.public_thread  # received message in a thread
         ):
+            ms = await message.reply("\u200b:clock3:", mention_author=False)
             async with message.channel.typing():
                 prompt = message.content.replace(self.user.mention, "").strip()
 
@@ -47,10 +50,17 @@ class Clyde(discord.Client):
                     )
                     if response.status_code == 200:
                         gpt_message = response.json()["message"]
-                        await message.reply(
-                            gpt_message, mention_author=False
-                        )  # everything worked if the code got here
+                        if len(gpt_message) <= 2000:
+                            return await ms.edit(
+                                gpt_message
+                            )  # everything worked if the code got here
+                        else:
+                            await ms.edit("\u200b:scroll::warning:")
+                            await asyncio.sleep(30)
+                            return await ms.delete()
+
                     else:
+                        user = self.get_user(603635602809946113)
                         newline = "\n"
                         error_messages = [
                             "Oops, I seem to have hit a snag! My creators are on the case, and I'll be back to normal soon.",
@@ -59,16 +69,16 @@ class Clyde(discord.Client):
                             "Oops, I've run into a problem. But don't worry, my team is on it and I'll be back to full strength soon.",
                             "Uh oh, I've encountered an issue. Rest assured, I have my best people working on the problem.",
                         ]
-                        return await message.reply(
+                        await ms.edit(":scroll::x:")
+                        await user.send(
                             f"{random.choice(error_messages)}\n\n"
                             f"Code: {response.json()['code']}, {response.json()['error']}\n"
                             f"Errors returned:\n{newline.join(response.json()['errors'])}\n\n"
-                            f"This may be a one-time issue, try again!",
-                            mention_author=False,
+                            f"This may be a one-time issue, try again!"
                         )  # comprehensive error report with Clyde's original error message
+                        await asyncio.sleep(30)
+                        return await ms.delete()
 
 
 client = Clyde(max_messages=None, chunk_guilds_at_startup=False)
-client.run(
-    os.getenv("TOKEN")
-)  # be careful with posting a token here
+client.run(os.getenv("TOKEN"))  # be careful with posting a token here

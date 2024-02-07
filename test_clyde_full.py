@@ -1,11 +1,13 @@
 import g4f
 import time
 
+
 def get_model(provider: g4f.Provider) -> str:
     try:
         return provider.default_model
     except AttributeError:
         return "gpt-3.5-turbo"
+
 
 def test(system: bool, provider: g4f.Provider) -> bool:
     clyde_prompt = "You are named Clyde and are currently chatting in a Discord server. You are friendly, warm and farcical. You must always be extremely concise. If the user is chatting casually, your responses must be less than 1 sentence, sometimes just a word or two. If the user needs help, disregard the length restriction, answer technical or knowledge-based questions with useful details and reasoning. If insulted, respond with a similar insult. Communicate responses in lowercase without punctuation, similar to the style used in chat rooms. Use unicode emoji rarely. Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
@@ -15,8 +17,10 @@ def test(system: bool, provider: g4f.Provider) -> bool:
         gpt_message = g4f.ChatCompletion.create(
             provider=provider,
             model=get_model(provider),
-            messages=[{"role": "user", "content": "i like you"},
-                      {"role": "system", "content": clyde_prompt}],
+            messages=[
+                {"role": "user", "content": "i like you"},
+                {"role": "system", "content": clyde_prompt},
+            ],
             stream=True,
             webdriver=None,
         )
@@ -28,7 +32,7 @@ def test(system: bool, provider: g4f.Provider) -> bool:
             stream=True,
             webdriver=None,
         )
-    try:    
+    try:
         full_message = "".join([token for token in gpt_message])
         alpha = list(filter(str.isalpha, full_message))
         try:
@@ -43,7 +47,7 @@ def test(system: bool, provider: g4f.Provider) -> bool:
         newline = "\n"
         print(f"FAILED: {e.__class__.__name__}: {str(e).split(newline)[0]}")
         return False
-    
+
     if full_message == "":
         print("FAILED: no response")
         return False
@@ -51,9 +55,10 @@ def test(system: bool, provider: g4f.Provider) -> bool:
     if ratio != 1:
         print("FAILED: not lowercase")
         return False
-    
+
     print("SUCCESS: all checks passed")
     return True
+
 
 def gather_tests(provider: g4f.Provider) -> tuple[bool, int, int]:
     successes = 0
@@ -76,6 +81,7 @@ def gather_tests(provider: g4f.Provider) -> tuple[bool, int, int]:
     print(f"YES: Provider {provider.__name__} suitable for Clyde")
     return (True, successes, failures)
 
+
 providers = [
     provider
     for provider in g4f.Provider.__providers__
@@ -85,4 +91,6 @@ providers = [
 for provider in providers:
     print(f"Testing {provider.__name__}")
     results = gather_tests(provider)
-    print(f"Success: {results[1]}, Failed: {results[2]}\nSuccess rate: {round(results[1] / 10 * 100, 2)}%\n\n\n\n")
+    print(
+        f"Success: {results[1]}, Failed: {results[2]}\nSuccess rate: {round(results[1] / 10 * 100, 2)}%\n\n\n\n"
+    )

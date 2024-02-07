@@ -1,6 +1,10 @@
 import g4f
 
-from flask import Flask, jsonify, request  # sanic does not start because of async blocking
+from flask import (
+    Flask,
+    jsonify,
+    request,
+)  # sanic does not start because of async blocking
 
 app = Flask("ClydeAPI")
 
@@ -13,14 +17,14 @@ async def get_gpt():  # replace the word Sakoma in the prompt below to rename yo
 
     while attempts > 0:  # try 5 times before erroring out
         response = g4f.ChatCompletion.create_async(
-            model="gpt-4",
-            messages=[ # uncomment 1,2 below or 3 below depending on how your provider accepts system prompts.
+            model="meta/llama-2-70b-chat",
+            messages=[  # uncomment 1,2 below or 3 below depending on how your provider accepts system prompts.
                 {"role": "system", "content": clyde_prompt},
                 {"role": "user", "content": request.json["prompt"]},
                 # {"role": "user", "content": clyde_prompt + request.json["prompt"]},
             ],
             stream=True,  # change this if you get an error of not supporting stream option
-            provider=g4f.Provider.FreeChatgpt,  # known working providers: FreeChatgpt, Llama2 
+            provider=g4f.Provider.Llama2,  # known working providers: FreeChatgpt, Llama2
         )
 
         try:
@@ -35,7 +39,9 @@ async def get_gpt():  # replace the word Sakoma in the prompt below to rename yo
             attempts -= 1
             continue
 
-        return jsonify({"message": "".join(gpt_message.lower()), "code": 0}), 200  # if your api got here, everything worked
+        return jsonify(
+            {"message": "".join(gpt_message.lower()), "code": 0}
+        ), 200  # if your api got here, everything worked
 
     return jsonify(
         {
@@ -47,4 +53,6 @@ async def get_gpt():  # replace the word Sakoma in the prompt below to rename yo
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8001, debug=True)  # run in debug mode for hot reloading
+    app.run(
+        host="0.0.0.0", port=8001, debug=True
+    )  # run in debug mode for hot reloading
