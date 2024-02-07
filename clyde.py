@@ -69,7 +69,7 @@ class Clyde(discord.Client):
                             "Oops, I've run into a problem. But don't worry, my team is on it and I'll be back to full strength soon.",
                             "Uh oh, I've encountered an issue. Rest assured, I have my best people working on the problem.",
                         ]
-                        await ms.edit(":scroll::x:")
+                        await ms.edit("\u200b:scroll::x:")
                         await user.send(
                             f"{random.choice(error_messages)}\n\n"
                             f"Code: {response.json()['code']}, {response.json()['error']}\n"
