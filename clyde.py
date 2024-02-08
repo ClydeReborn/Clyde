@@ -40,7 +40,7 @@ class Clyde(discord.Client):
         ):
             ms = await message.reply("\u200b:clock3:", mention_author=False)
             async with message.channel.typing():
-                prompt = message.content.replace(self.user.mention, "").strip()
+                prompt = message.content.replace(self.user.mention, "\u200b").strip()
 
                 async with httpx.AsyncClient(
                     timeout=None
@@ -60,7 +60,7 @@ class Clyde(discord.Client):
                             return await ms.delete()
 
                     else:
-                        user = self.get_user(603635602809946113)
+                        user = self.get_user(603635602809946113)  # replace with ID of the owner's ID you want to send errors to
                         newline = "\n"
                         await ms.edit("\u200b:scroll::x:")
                         await user.send(
@@ -68,10 +68,10 @@ class Clyde(discord.Client):
                             f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
                             f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
                             f"If someone else got this error, tell them to retry their request."
-                        )  # comprehensive error report with Clyde's original error message
+                        )  # comprehensive error reports, only the owner will get those
                         await asyncio.sleep(30)
                         return await ms.delete()
 
 
-client = Clyde(max_messages=None, chunk_guilds_at_startup=False)
+client = Clyde(max_messages=None, chunk_guilds_at_startup=False)  # this speeds-up selfbot boots
 client.run(os.getenv("TOKEN"))  # be careful with posting a token here
