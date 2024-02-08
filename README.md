@@ -9,7 +9,7 @@ On March 2nd 2023, Discord introduced Clyde, an AI chatbot based on OpenAI's Cha
 The name for this bot is "Sakoma", as suggested by 3177.<br>
 You can rename it though by replacing the word "Sakoma" in the designated system prompt with your own name.
 ### Programming Languages
-Clyde uses Python for the bot part and Shell (ZSH required) for launching.
+Clyde uses Python for the bot part and Shell for launching.
 ###  AI model
 It currently uses [FreeChatgpt](https://free.chatgpt.org.uk)'s GPT-4 model, you can swap it for Bing if you're not getting a CAPTCHA verification.
 

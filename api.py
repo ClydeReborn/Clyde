@@ -17,14 +17,14 @@ async def get_gpt():  # replace the word Sakoma in the prompt below to rename yo
 
     while attempts > 0:  # try 5 times before erroring out
         response = g4f.ChatCompletion.create_async(
-            model="meta/llama-2-70b-chat",
+            model="gpt-4",  # Llama2 use: meta/llama-2-70b-chat, FreeChatgpt use: gpt-4
             messages=[  # uncomment 1,2 below or 3 below depending on how your provider accepts system prompts.
                 {"role": "system", "content": clyde_prompt},
                 {"role": "user", "content": request.json["prompt"]},
                 # {"role": "user", "content": clyde_prompt + request.json["prompt"]},
             ],
             stream=True,  # change this if you get an error of not supporting stream option
-            provider=g4f.Provider.Llama2,  # known working providers: FreeChatgpt, Llama2
+            provider=g4f.Provider.FreeChatgpt,  # known working providers: FreeChatgpt, Llama2
         )
 
         try:

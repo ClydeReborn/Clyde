@@ -62,19 +62,12 @@ class Clyde(discord.Client):
                     else:
                         user = self.get_user(603635602809946113)
                         newline = "\n"
-                        error_messages = [
-                            "Oops, I seem to have hit a snag! My creators are on the case, and I'll be back to normal soon.",
-                            "Woah there, I've hit a bump in the road. My creators have been notified and I'll be fixed shortly.",
-                            "Sorry, something went wrong. My creators have been notified and I'll be fixed shortly.",
-                            "Oops, I've run into a problem. But don't worry, my team is on it and I'll be back to full strength soon.",
-                            "Uh oh, I've encountered an issue. Rest assured, I have my best people working on the problem.",
-                        ]
                         await ms.edit("\u200b:scroll::x:")
                         await user.send(
-                            f"{random.choice(error_messages)}\n\n"
-                            f"Code: {response.json()['code']}, {response.json()['error']}\n"
-                            f"Errors returned:\n{newline.join(response.json()['errors'])}\n\n"
-                            f"This may be a one-time issue, try again!"
+                            f"# Oh shit!\n"
+                            f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
+                            f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
+                            f"If someone else got this error, tell them to retry their request."
                         )  # comprehensive error report with Clyde's original error message
                         await asyncio.sleep(30)
                         return await ms.delete()
