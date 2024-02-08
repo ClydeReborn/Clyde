@@ -17,7 +17,7 @@ async def get_gpt():  # replace the word Sakoma in the prompt below to rename yo
 
     while attempts > 0:  # try 5 times before erroring out
         response = g4f.ChatCompletion.create_async(
-            model="gpt-4",  # Llama2 use: meta/llama-2-70b-chat, FreeChatgpt use: gpt-4
+            model="gemini-pro",  # Llama2 use: meta/llama-2-70b-chat, FreeChatgpt use: gemini-pro
             messages=[  # uncomment 1,2 below or 3 below depending on how your provider accepts system prompts.
                 {"role": "system", "content": clyde_prompt},
                 {"role": "user", "content": request.json["prompt"]},
