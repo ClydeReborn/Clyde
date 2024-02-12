@@ -29,7 +29,6 @@ ai = provider.LLAMA2(
 
 @app.post("/gpt")
 def get_gpt():  # replace the word Sakoma in the prompt below to rename your instance of Clyde.
-    # temporarily unused because of lack of support at python-tgpt
     attempts = 5
     errors = []
 
