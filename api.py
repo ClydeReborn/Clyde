@@ -1,4 +1,4 @@
-import g4f
+import pytgpt.llama2 as provider
 
 from flask import (
     Flask,
@@ -7,28 +7,35 @@ from flask import (
 )  # sanic does not start because of async blocking
 
 app = Flask("ClydeAPI")
+ai = provider.LLAMA2(
+    intro="You are named Sakoma and are currently chatting in a Discord server. "
+    "You are friendly, warm and farcical. "
+    "You must always be extremely concise. "
+    "If the user is chatting casually, "
+    "your responses must be less than 1 sentence, "
+    "sometimes just a word or two. "
+    "If the user needs help, "
+    "disregard the length restriction, "
+    "answer technical or knowledge-based questions with useful details and reasoning. "
+    "If insulted, respond with a similar insult. "
+    "Communicate responses in lowercase without punctuation, "
+    "similar to the style used in chat rooms. "
+    "Use unicode emoji rarely. "
+    "Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
+    "Always prefix your messages with the following sequence: 'sakoma: '",
+    max_tokens=400,
+)
 
 
 @app.post("/gpt")
-async def get_gpt():  # replace the word Sakoma in the prompt below to rename your instance of Clyde.
-    clyde_prompt = "You are named Sakoma and are currently chatting in a Discord server. You are friendly, warm and farcical. You must always be extremely concise. If the user is chatting casually, your responses must be less than 1 sentence, sometimes just a word or two. If the user needs help, disregard the length restriction, answer technical or knowledge-based questions with useful details and reasoning. If insulted, respond with a similar insult. Communicate responses in lowercase without punctuation, similar to the style used in chat rooms. Use unicode emoji rarely. Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
+def get_gpt():  # replace the word Sakoma in the prompt below to rename your instance of Clyde.
+    # temporarily unused because of lack of support at python-tgpt
     attempts = 5
     errors = []
 
     while attempts > 0:  # try 5 times before erroring out
-        response = g4f.ChatCompletion.create_async(
-            model="gemini-pro",  # Llama2 use: meta/llama-2-70b-chat, FreeChatgpt use: gemini-pro
-            messages=[  # uncomment 1,2 below or 3 below depending on how your provider accepts system prompts.
-                {"role": "system", "content": clyde_prompt},
-                {"role": "user", "content": request.json["prompt"]},
-                # {"role": "user", "content": clyde_prompt + request.json["prompt"]},
-            ],
-            stream=True,  # change this if you get an error of not supporting stream option
-            provider=g4f.Provider.FreeChatgpt,  # known working providers: FreeChatgpt, Llama2
-        )
-
         try:
-            gpt_message = "".join([token async for token in response])
+            gpt_message = ai.chat(request.json["prompt"])
         except Exception as e:
             errors.append(f"{e.__class__.__name__}: {str(e)}")  # error? retry here
             attempts -= 1
@@ -40,7 +47,7 @@ async def get_gpt():  # replace the word Sakoma in the prompt below to rename yo
             continue
 
         return jsonify(
-            {"message": "".join(gpt_message.lower()), "code": 0}
+            {"message": "".join(gpt_message.lower().split("sakoma:")).strip(), "code": 0}
         ), 200  # if your api got here, everything worked
 
     return jsonify(
