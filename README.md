@@ -11,7 +11,15 @@ You can rename it though by replacing the word "Sakoma" in the designated system
 ### Programming Languages
 Clyde uses Python for the bot part and Shell for launching.
 ###  AI model
-It currently uses [FreeChatgpt](https://free.chatgpt.org.uk)'s GPT-4 model, you can swap it for Bing if you're not getting a CAPTCHA verification.
+It currently uses [Llama2](https://llama2.ai) from the [`python-tgpt`](https://github.com/Simatwa/python-tgpt) library.
+
+We would recommend to use one of the following providers for your instance of Clyde:
+- gpt4free: Bing¹, FreeChatgpt², Llama2, Phind
+- python-tgpt: Llama2, Phind³
+
+<sub><sup>¹May give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
+<sub><sup>²If using the vendored provider file.</sub></sup><br>
+<sub><sup>³Has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
 
 # How to run?
 1. Clone this repo.
