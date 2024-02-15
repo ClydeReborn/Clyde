@@ -2,6 +2,7 @@ from g4f.Provider import __all__, ProviderUtils
 from g4f import ChatCompletion
 import concurrent.futures
 
+# gather all providers and values
 _ = ["BaseProvider", "AsyncProvider", "AsyncGeneratorProvider", "RetryProvider"]
 fails = []
 fails_system = []
@@ -10,6 +11,7 @@ successes_system = []
 system_prompt = "You are named Sakoma and are currently chatting in a Discord server. You are friendly, warm and farcical. You must always be extremely concise. If the user is chatting casually, your responses must be less than 1 sentence, sometimes just a word or two. If the user needs help, disregard the length restriction, answer technical or knowledge-based questions with useful details and reasoning. If insulted, respond with a similar insult. Communicate responses in lowercase without punctuation, similar to the style used in chat rooms. Use unicode emoji rarely. Do not refer to yourself as a bot, AI Assistant, or any equivalent term."
 
 
+# test system-less
 def test_provider(provider):
     try:
         provider = ProviderUtils.convert[provider]
@@ -24,15 +26,16 @@ def test_provider(provider):
             )
             return completion, provider.__name__
     except Exception:
-        fails.append(f"{provider.__name__} isn't working.")
+        fails.append(f"ERROR: {provider.__name__} isn't working.")
         return None
 
 
+# test with a system prompt
 def system_test(provider):
     try:
         provider = ProviderUtils.convert[provider]
         if provider.working and not provider.needs_auth:
-            print(f"ERROR: Testing {provider.__name__} with a system prompt")
+            print(f"Testing {provider.__name__} with a system prompt")
             completion = ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
@@ -47,6 +50,7 @@ def system_test(provider):
         return None
 
 
+# gather up all successful responses
 with concurrent.futures.ThreadPoolExecutor() as executor:
     futures = [
         executor.submit(test_provider, provider)
@@ -68,6 +72,7 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
         if result := future.result():
             successes_system.append(f"SUCCESS: {result[1]} accepted the system request: {result[0]}")
 
+# print the results
 print("\n\n")
 print(f"Working providers: {len(successes) + len(successes_system)}")
 print(f"Broken providers: {len(fails) + len(fails_system)}")
