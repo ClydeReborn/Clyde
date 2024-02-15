@@ -1,5 +1,17 @@
+# selfbot
 discord.py-self
+
+# if you want to use a bot account use this:
+# bot
+# discord.py
+
+# gpt libraries
+python-tgpt
 g4f
+
+# anti-token leak
 dotenv
+
+# api requests
 httpx
 flask[async]
