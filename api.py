@@ -23,7 +23,7 @@ ai = provider.LLAMA2(
     "Use unicode emoji rarely. "
     "Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
     "Always prefix your messages with the following sequence: 'sakoma: '",
-    max_tokens=400,
+    max_tokens=400
 )
 
 
