@@ -60,7 +60,9 @@ class Clyde(discord.Client):
                             return await ms.delete()
 
                     else:
-                        user = self.get_user(603635602809946113)  # replace with ID of the owner's ID you want to send errors to
+                        user = self.get_user(
+                            603635602809946113
+                        )  # replace with ID of the owner's ID you want to send errors to
                         newline = "\n"
                         await ms.edit("\u200b:scroll::x:")
                         await user.send(
@@ -73,5 +75,7 @@ class Clyde(discord.Client):
                         return await ms.delete()
 
 
-client = Clyde(max_messages=None, chunk_guilds_at_startup=False)  # this speeds-up selfbot boots
+client = Clyde(
+    max_messages=None, chunk_guilds_at_startup=False
+)  # this speeds-up selfbot boots
 client.run(os.getenv("TOKEN"))  # be careful with posting a token here

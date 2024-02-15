@@ -23,7 +23,7 @@ ai = provider.LLAMA2(
     "Use unicode emoji rarely. "
     "Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
     "Always prefix your messages with the following sequence: 'sakoma: '",
-    max_tokens=400
+    max_tokens=400,
 )
 
 
@@ -46,7 +46,10 @@ def get_gpt():  # replace the word Sakoma in the prompt below to rename your ins
             continue
 
         return jsonify(
-            {"message": "".join(gpt_message.lower().split("sakoma:")).strip(), "code": 0}
+            {
+                "message": "".join(gpt_message.lower().split("sakoma:")).strip(),
+                "code": 0,
+            }
         ), 200  # if your api got here, everything worked
 
     return jsonify(

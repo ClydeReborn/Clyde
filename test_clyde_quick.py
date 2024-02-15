@@ -46,7 +46,9 @@ def system_test(provider):
             )
             return completion, provider.__name__
     except Exception:
-        fails_system.append(f"ERROR: {provider.__name__} isn't working with system requests.")
+        fails_system.append(
+            f"ERROR: {provider.__name__} isn't working with system requests."
+        )
         return None
 
 
@@ -70,7 +72,9 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
 
     for future in concurrent.futures.as_completed(futures_system):
         if result := future.result():
-            successes_system.append(f"SUCCESS: {result[1]} accepted the system request: {result[0]}")
+            successes_system.append(
+                f"SUCCESS: {result[1]} accepted the system request: {result[0]}"
+            )
 
 # print the results
 print("\n\n")

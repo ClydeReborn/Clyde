@@ -6,13 +6,9 @@ from aiohttp import ClientSession
 from ..typing import AsyncResult, Messages
 from .base_provider import AsyncGeneratorProvider
 
-models = {
-    "gemini-pro": "google-gemini-pro"
-}
-urls = itertools.cycle([
-    "https://free.chatgpt.org.uk",
-    "https://ai.chatgpt.org.uk"
-])
+models = {"gemini-pro": "google-gemini-pro"}
+urls = itertools.cycle(["https://free.chatgpt.org.uk", "https://ai.chatgpt.org.uk"])
+
 
 class FreeChatgpt(AsyncGeneratorProvider):
     url = "https://free.chatgpt.org.uk"
@@ -23,11 +19,7 @@ class FreeChatgpt(AsyncGeneratorProvider):
 
     @classmethod
     async def create_async_generator(
-        cls,
-        model: str,
-        messages: Messages,
-        proxy: str = None,
-        **kwargs
+        cls, model: str, messages: Messages, proxy: str = None, **kwargs
     ) -> AsyncResult:
         if model in models:
             model = models[model]
@@ -36,29 +28,31 @@ class FreeChatgpt(AsyncGeneratorProvider):
         url = next(urls)
         headers = {
             "Accept": "application/json, text/event-stream",
-            "Content-Type":"application/json",
+            "Content-Type": "application/json",
             "Accept-Encoding": "gzip, deflate, br",
             "Accept-Language": "en-US,en;q=0.5",
-            "Host":"free.chatgpt.org.uk",
-            "Referer":f"{cls.url}/",
-            "Origin":f"{cls.url}",
+            "Host": "free.chatgpt.org.uk",
+            "Referer": f"{cls.url}/",
+            "Origin": f"{cls.url}",
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", 
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         }
         async with ClientSession(headers=headers) as session:
             data = {
-                "messages":messages,
-                "stream":True,
-                "model":model,
-                "temperature":0.5,
-                "presence_penalty":0,
-                "frequency_penalty":0,
-                "top_p":1,
-                **kwargs
+                "messages": messages,
+                "stream": True,
+                "model": model,
+                "temperature": 0.5,
+                "presence_penalty": 0,
+                "frequency_penalty": 0,
+                "top_p": 1,
+                **kwargs,
             }
-            async with session.post(f'{url}/api/openai/v1/chat/completions', json=data, proxy=proxy) as response:
+            async with session.post(
+                f"{url}/api/openai/v1/chat/completions", json=data, proxy=proxy
+            ) as response:
                 response.raise_for_status()
                 started = False
                 async for line in response.content:
@@ -66,7 +60,7 @@ class FreeChatgpt(AsyncGeneratorProvider):
                         break
                     elif line.startswith(b"data: "):
                         line = json.loads(line[6:])
-                        if(line["choices"]==[]):
+                        if line["choices"] == []:
                             continue
                         chunk = line["choices"][0]["delta"].get("content")
                         if chunk:
