@@ -7,6 +7,7 @@ from flask import (
     Flask,
     jsonify,
     request,
+    redirect,
 )  # sanic does not start because of async blocking
 
 
@@ -31,14 +32,16 @@ ai = provider.LLAMA2(
     max_tokens=400,
 )
 
+@app.get("/")
+def root():
+    return redirect("https://www.urbandictionary.com/ChatGPT")
 
 @app.post("/gpt")
 def get_gpt():  # replace the word Sakoma in the prompt below to rename your instance of Clyde.
-    attempts = 5
     errors = []
 
-    while attempts > 0:  # try 5 times before erroring out
-        logging.info(f"Fetching response... ({attempts-4}/5)")
+    for i in range(5):  # try 5 times before erroring out
+        logging.info(f"Fetching response... ({i+1}/5)")
         try:
             gpt_message = ai.chat(request.json["prompt"])
         except Exception as e:
