@@ -29,15 +29,15 @@ ai = provider.LLAMA2(
     "Use unicode emoji rarely. "
     "Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
     "Always prefix your messages with the following sequence: 'sakoma: '",
-    max_tokens=400,
+    max_tokens=400, timeout=None
 )
 
 @app.get("/")
-def root():
+async def root():
     return redirect("https://www.urbandictionary.com/ChatGPT")
 
 @app.post("/gpt")
-def get_gpt():  # replace the word Sakoma in the prompt below to rename your instance of Clyde.
+async def get_gpt():  # replace the word Sakoma in the prompt below to rename your instance of Clyde.
     errors = []
 
     for i in range(5):  # try 5 times before erroring out
@@ -47,13 +47,11 @@ def get_gpt():  # replace the word Sakoma in the prompt below to rename your ins
         except Exception as e:
             logging.warning(f"An exception occurred: {e.__class__.__name__}: {str(e)}")
             errors.append(f"{e.__class__.__name__}: {str(e)}")  # error? retry here
-            attempts -= 1
             continue
 
         if not gpt_message:
             logging.warning(f"No message was returned")
             errors.append("No message was returned")  # blank message? retry here
-            attempts -= 1
             continue
 
         logging.info("Message fetched successfully")
