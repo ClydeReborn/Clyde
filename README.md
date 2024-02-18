@@ -2,7 +2,7 @@
 Recreation of Discord's cancelled AI Bot, Clyde.
 
 # Story
-On March 2nd 2023, Discord introduced Clyde, an AI chatbot based on OpenAI's ChatGPT, however it had many flaws, and all people hated it, mostly from NTTS' (No Text To Speech) audience, and Discord killed Clyde on December 1st 2023, as it would cost Discord a lot of money and so they decided to shut it down, the EOL date was announced on November 5th 2023 and all my friends and everyone in the Chomu Paradise Club panicked and was very sad (infact Bohdan/TheBombGuy threw his A30s and cracked the screen even more than it was), however Luna (lun4h) knew that this would happen, and already started working on a backup.
+On March 2nd 2023, Discord introduced Clyde, an AI chatbot based on OpenAI's ChatGPT, however it had many flaws, and all people hated it, mostly from NTTS' (No Text To Speech) audience, and Discord killed Clyde on December 1st 2023, as it would cost Discord a lot of money and so they decided to shut it down, the EOL date was announced on November 5th 2023 and all of @debarkak's friends and everyone in the Chomu Paradise Club panicked and was very sad (infact Bohdan threw his A30s and cracked the screen even more than it was), however Luna knew that this would happen, and already started working on a backup.
 
 # Information
 ### Name
