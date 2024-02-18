@@ -1,20 +1,20 @@
 import sys
 import logging
 
-import pytgpt.llama2 as provider
+import g4f
+import pytgpt.phind as provider
+import nest_asyncio
 
-from flask import (
-    Flask,
-    jsonify,
-    request,
-    redirect,
-)  # sanic does not start because of async blocking
+from flask import Flask, request, jsonify, redirect
 
+nest_asyncio.apply()
+logging.basicConfig(
+    stream=sys.stderr, level=logging.INFO, format="%(levelname)s - %(message)s"
+)
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO, format="%(levelname)s - %(message)s")
 app = Flask("ClydeAPI")
-ai = provider.LLAMA2(
-    intro="You are named Sakoma and are currently chatting in a Discord server. "
+system_prompt = (
+    "You are named Sakoma and are currently chatting in a Discord server. "  # rename Sakoma here
     "You are friendly, warm and farcical. "
     "You must always be extremely concise. "
     "If the user is chatting casually, "
@@ -28,36 +28,62 @@ ai = provider.LLAMA2(
     "similar to the style used in chat rooms. "
     "Use unicode emoji rarely. "
     "Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
-    "Always prefix your messages with the following sequence: 'sakoma: '",
-    max_tokens=400, timeout=None
+    "Always prefix your messages with the following sequence: 'sakoma: ' "
 )
+
 
 @app.get("/")
 async def root():
     return redirect("https://www.urbandictionary.com/ChatGPT")
 
+
 @app.post("/gpt")
-async def get_gpt():  # replace the word Sakoma in the prompt below to rename your instance of Clyde.
+async def get_gpt():
     errors = []
+    mode = request.json.get("type") or ""
 
     for i in range(5):  # try 5 times before erroring out
-        logging.info(f"Fetching response... ({i+1}/5)")
+        logging.info(f"Fetching response... ({i+1}/5)")  # pylint: disable=W1203
+
         try:
-            gpt_message = ai.chat(request.json["prompt"])
+            if mode == "tgpt":
+                ai = provider.PHIND(max_tokens=400, timeout=None)
+                gpt_message = ai.chat(system_prompt + request.json.get("prompt"))
+            elif mode == "g4f":
+                gpt_message = g4f.ChatCompletion.create(
+                    model="gemini-pro",
+                    provider=g4f.Provider.GeminiProChat,
+                    messages=[
+                        #    {"role": "user", "content": request.json.get("prompt")},
+                        {
+                            "role": "user",
+                            "content": system_prompt + request.json.get("prompt"),
+                        }
+                        #    {"role": "system", "content": system_prompt},
+                    ],
+                    timeout=None,
+                    max_tokens=400,
+                )
+            else:
+                logging.warning("Discarding invalid options")
+                raise TypeError("Invalid provider library provided")
         except Exception as e:
-            logging.warning(f"An exception occurred: {e.__class__.__name__}: {str(e)}")
+            logging.warning(f"An exception occurred: {e.__class__.__name__}: {str(e)}")  # pylint: disable=W1203
             errors.append(f"{e.__class__.__name__}: {str(e)}")  # error? retry here
             continue
 
         if not gpt_message:
-            logging.warning(f"No message was returned")
+            logging.warning("No message was returned")
             errors.append("No message was returned")  # blank message? retry here
             continue
 
         logging.info("Message fetched successfully")
         return jsonify(
             {
-                "message": "".join(gpt_message.lower().split("sakoma:")).strip(),
+                "message": "".join(list(gpt_message))
+                .lower()
+                .split("user: ", 1)[0]
+                .replace("sakoma: ", ""),
                 "code": 0,
             }
         ), 200  # if your api got here, everything worked

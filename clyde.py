@@ -1,13 +1,13 @@
 import os
-import sys
 import asyncio
-import random
 
 import discord
 import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
+
+owner = 603635602809946113
 
 
 class Clyde(discord.Client):
@@ -44,35 +44,46 @@ class Clyde(discord.Client):
 
                 async with httpx.AsyncClient(
                     timeout=None
-                ) as client:  # queue a response from the API
-                    response = await client.post(
-                        "http://127.0.0.1:8001/gpt", json={"prompt": prompt}
-                    )
+                ) as web:  # queue a response from the API
+                    try:
+                        response = await web.post(
+                            "http://127.0.0.1:8001/gpt",
+                            json={"prompt": prompt, "type": "g4f"},
+                        )
+                    except httpx.ConnectError:
+                        await ms.edit("\u200b:earth_africa::x:")
+                        user = self.get_user(owner)
+                        await user.send(
+                            "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
+                            "Please restart the API server before trying to use ChatGPT."
+                        )
+                        await asyncio.sleep(30)
+                        return await ms.delete()
+
                     if response.status_code == 200:
                         gpt_message = response.json()["message"]
                         if len(gpt_message) <= 2000:
                             return await ms.edit(
                                 gpt_message
                             )  # everything worked if the code got here
-                        else:
-                            await ms.edit("\u200b:scroll::warning:")
-                            await asyncio.sleep(30)
-                            return await ms.delete()
 
-                    else:
-                        user = self.get_user(
-                            603635602809946113
-                        )  # replace with ID of the owner's ID you want to send errors to
-                        newline = "\n"
-                        await ms.edit("\u200b:scroll::x:")
-                        await user.send(
-                            f"# Oh shit!\n"
-                            f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
-                            f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
-                            f"If someone else got this error, tell them to retry their request."
-                        )  # comprehensive error reports, only the owner will get those
+                        await ms.edit("\u200b:scroll::warning:")
                         await asyncio.sleep(30)
                         return await ms.delete()
+
+                    user = self.get_user(
+                        owner
+                    )  # replace with ID of the owner's ID you want to send errors to
+                    newline = "\n"
+                    await ms.edit("\u200b:scroll::x:")
+                    await user.send(
+                        f"# Oh shit!\n"
+                        f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
+                        f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
+                        f"If someone else got this error, tell them to retry their request."
+                    )  # comprehensive error reports, only the owner will get those
+                    await asyncio.sleep(30)
+                    return await ms.delete()
 
 
 client = Clyde(
