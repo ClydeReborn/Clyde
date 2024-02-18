@@ -1,3 +1,0 @@
-This provider can error out with a 429 Too Many Requests error sometimes.
-
-If you don't want that, don't use this gpt4free custom provider.
