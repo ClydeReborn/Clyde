@@ -11,21 +11,22 @@ You can rename it though by replacing the word "Sakoma" in the designated system
 ### Programming Languages
 Clyde uses Python for the bot part and Shell for launching.
 ###  AI model
-It currently uses [Llama2](https://llama2.ai) from the [`python-tgpt`](https://github.com/Simatwa/python-tgpt) library.
+It tries to use the best providers from [python-tgpt](https://github.com/Simatwa/python-tgpt) and [gpt4free](https://github.com/xtekky/gpt4free), these are subject to change depending on what providers are online.
 
 We would recommend to use one of the following providers for your instance of Clyde:
-- gpt4free: Bing¹, FreeChatgpt², Llama2, Phind⁴
-- python-tgpt: Llama2, Phind³
+- gpt4free: Bing¹, GeminiProChat², Llama2⁵, Phind⁴
+- python-tgpt: Llama2⁵, Phind³
 
 <sub><sup>¹May give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
-<sub><sup>²If using the vendored provider file.</sub></sup><br>
+<sub><sup>²If using the vendored provider file; check the [Providers](https://github.com/ClydeReborn/Providers).</sub></sup><br>
 <sub><sup>³Has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
 <sub><sup>⁴May give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
+<sub><sup>⁵May work abnormally slow or not return any responses.</sub></sup>
 
 # How to run?
 1. Clone this repo.
 ```sh
-git clone https://github.com/debarkak/clyde.git
+git clone https://github.com/ClydeReborn/Clyde
 ```
 
 2. Install Python and required modules.
@@ -43,7 +44,7 @@ It must be a user account token, use an alt if you're bothered about a ban.
 
 ### Testing Providers
 To check working providers, run `python test_clyde_full.py` for a comprehensive test, or run `python test_clyde_quick.py` for a quick test.<br>
-The comprehensive test may take upwards of 30 minutes to finish!
+The comprehensive test may take a longer time to finish!
 
 # Required OS
 * This bot can only run on Linux. We recommend using Arch Linux, Fedora or Debian for this.<br>
