@@ -37,16 +37,13 @@ class Clyde(discord.Client):
         if (
             self.user.mentioned_in(message)
             or not message.guild
-            or message.channel.type
-            == discord.ChannelType.public_thread
+            or message.channel.type == discord.ChannelType.public_thread
         ):
             ms = await message.reply("\u200b:clock3:", mention_author=False)
             async with message.channel.typing():
                 prompt = message.content.replace(self.user.mention, "\u200b").strip()
 
-                async with httpx.AsyncClient(
-                    timeout=None
-                ) as web:
+                async with httpx.AsyncClient(timeout=None) as web:
                     try:
                         # run ai externally via an attached api
                         response = await web.post(
@@ -68,9 +65,7 @@ class Clyde(discord.Client):
                         # correct response
                         gpt_message = response.json()["message"]
                         if len(gpt_message) <= 2000:
-                            return await ms.edit(
-                                gpt_message
-                            )
+                            return await ms.edit(gpt_message)
                         # too large response
                         await ms.edit("\u200b:scroll::warning:")
                         await asyncio.sleep(30)
@@ -90,7 +85,5 @@ class Clyde(discord.Client):
                     return await ms.delete()
 
 
-client = Clyde(
-    max_messages=None, chunk_guilds_at_startup=False
-)
+client = Clyde(max_messages=None, chunk_guilds_at_startup=False)
 client.run(os.getenv("TOKEN"))

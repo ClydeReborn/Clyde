@@ -99,7 +99,7 @@ async def get_gpt():
                 .replace("sakoma: ", ""),
                 "code": 0,
             }
-        ), 200 
+        ), 200
 
     # log the failure and quit fetching, send error back to the bot
     logging.error("Could not fetch message due to the errors above")
@@ -114,6 +114,4 @@ async def get_gpt():
 
 # run server at port 8001, debug mode to get hot-reloading without conflicts
 if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0", port=8001, debug=True
-    )
+    app.run(host="0.0.0.0", port=8001, debug=True)
