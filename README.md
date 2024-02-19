@@ -35,13 +35,15 @@ git clone https://github.com/ClydeReborn/Clyde
 pip install -U -r requirements.txt
 ```
 
-3. Open `clyde.py`, and put your account token in the bottom line.
+3. Open one of the `clyde.*.py` files, and make sure you have put your token in the `.env` file.
 ```
-client.run("<TOKEN_GOES_HERE>")
+TOKEN=<TOKEN_GOES_HERE>
 ```
 
 4. Replace `<TOKEN_GOES_HERE>` with your account token.<br>
-It must be a user account token, use an alt if you're bothered about a ban.
+Use a bot token for the bot version, or a user token for the selfbot version.*
+
+<sub><sup>*Be careful when running Clyde as a selfbot, as it violates Discord ToS if you do so.</sub></sup>
 
 ### Testing Providers
 To check working providers, run `python test_clyde_full.py` for a comprehensive test, or run `python test_clyde_quick.py` for a quick test.<br>
