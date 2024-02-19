@@ -1,5 +1,5 @@
 # selfbot
-discord.py-self
+git+https://github.com/dolfies/discord.py-self
 
 # if you want to use a bot account use this:
 # bot
@@ -9,8 +9,11 @@ discord.py-self
 python-tgpt
 g4f
 
+# async fix
+nest-asyncio
+
 # anti-token leak
-dotenv
+python-dotenv
 
 # api requests
 httpx
