@@ -1,8 +1,9 @@
-# selfbot
-git+https://github.com/dolfies/discord.py-self
+# dependencies required for Clyde
+# a curated selection of dependencies guaranteeing fast asynchronous running of the bot and API
+# it will not bloat your computer up with python packages
 
-# if you want to use a bot account use this:
-# bot
+# bot library (select one, git dependency for selfbot, discord.py proper for bot, these cannot be combined)
+# git+https://github.com/dolfies/discord.py-self
 # discord.py
 
 # gpt libraries
