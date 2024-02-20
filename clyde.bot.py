@@ -80,7 +80,7 @@ async def on_message(message):
                         random.choice(clyde_error_messages), delete_after=30
                     )
                     user = client.get_user(owner)
-                    await user.send(
+                    return await user.send(
                         "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
                         "Please restart the API server before trying to use ChatGPT."
                     )  # only Clyde's owner will get this
@@ -97,7 +97,7 @@ async def on_message(message):
                 await message.channel.send(
                     random.choice(clyde_error_messages), delete_after=30
                 )
-                await user.send(
+                return await user.send(
                     f"# Oh shit!\n"
                     f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
                     f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
