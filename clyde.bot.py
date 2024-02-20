@@ -1,6 +1,7 @@
 import os
 import asyncio
 import secrets
+import random
 
 import discord
 from discord.ext import commands
@@ -56,7 +57,13 @@ async def on_message(message):
         or not message.guild
         or message.channel.type == discord.ChannelType.public_thread
     ):
-        ms = await message.reply("\u200b:clock3:", mention_author=False)
+        clyde_error_messages = [
+            "Oops, I seem to have hit a snag! My creators are on the case, and I'll be back to normal soon.",
+            "Woah there, I've hit a bump in the road. My creators have been notified and I'll be fixed shortly.",
+            "Sorry, something went wrong. My creators have been notified and I'll be fixed shortly.",
+            "Oops, I've run into a problem. But don't worry, my team is on it and I'll be back to full strength soon.",
+            "Uh oh, I've encountered an issue. Rest assured, I have my best people working on the problem.",
+        ]
         async with message.channel.typing():
             prompt = message.content.replace(client.user.mention, "\u200b").strip()
 
@@ -69,37 +76,33 @@ async def on_message(message):
                     )
                 except httpx.ConnectError:
                     # server offline error response
-                    await ms.edit(content="\u200b:earth_africa::x:")
+                    await message.channel.send(
+                        random.choice(clyde_error_messages), delete_after=30
+                    )
                     user = client.get_user(owner)
                     await user.send(
                         "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
                         "Please restart the API server before trying to use ChatGPT."
-                    )
-                    await asyncio.sleep(30)
-                    return await ms.delete()
+                    )  # only Clyde's owner will get this
 
                 if response.status_code == 200:
                     # correct response
                     gpt_message = response.json()["message"]
                     if len(gpt_message) <= 2000:
-                        return await ms.edit(gpt_message)
-                    # too large response
-                    await ms.edit(content="\u200b:scroll::warning:")
-                    await asyncio.sleep(30)
-                    return await ms.delete()
+                        return await message.channel.send(gpt_message)
 
                 # error response
                 user = client.get_user(owner)
                 newline = "\n"
-                await ms.edit(content="\u200b:scroll::x:")
+                await message.channel.send(
+                    random.choice(clyde_error_messages), delete_after=30
+                )
                 await user.send(
                     f"# Oh shit!\n"
                     f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
                     f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
                     f"If someone else got this error, tell them to retry their request."
-                )  # only the owner id will get this
-                await asyncio.sleep(30)
-                return await ms.delete()
+                )  # only Clyde's owner will get this
 
 
 client.run(os.getenv("TOKEN"))
