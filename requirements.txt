@@ -17,5 +17,6 @@ nest-asyncio
 python-dotenv
 
 # api requests
+brotli
 httpx
 flask[async]
