@@ -76,26 +76,28 @@ async def on_message(message):
                     )
                 except httpx.ConnectError:
                     # server offline error response
-                    await message.channel.send(
-                        random.choice(clyde_error_messages), delete_after=30
+                    ms = await message.reply(
+                        random.choice(clyde_error_messages), mention_author=False
                     )
                     user = client.get_user(owner)
                     await user.send(
                         "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
                         "Please restart the API server before trying to use ChatGPT."
                     )  # only Clyde's owner will get this
+                    await asyncio.sleep(30)
+                    await ms.delete()
 
                 if response.status_code == 200:
                     # correct response
                     gpt_message = response.json()["message"]
                     if len(gpt_message) <= 2000:
-                        return await message.channel.send(gpt_message)
+                        return await message.reply(gpt_message)
 
                 # error response
                 user = client.get_user(owner)
                 newline = "\n"
-                await message.channel.send(
-                    random.choice(clyde_error_messages), delete_after=30
+                ms = await message.channel.send(
+                    random.choice(clyde_error_messages), mention_author=False
                 )
                 await user.send(
                     f"# Oh shit!\n"
@@ -103,6 +105,8 @@ async def on_message(message):
                     f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
                     f"If someone else got this error, tell them to retry their request."
                 )  # only Clyde's owner will get this
+                await asyncio.sleep(30)
+                await ms.delete()
 
 
 client.run(os.getenv("TOKEN"))
