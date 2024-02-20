@@ -99,14 +99,14 @@ async def on_message(message):
                 ms = await message.channel.send(
                     random.choice(clyde_error_messages), mention_author=False
                 )
-                return await user.send(
+                await user.send(
                     f"# Oh shit!\n"
                     f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
                     f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
                     f"If someone else got this error, tell them to retry their request."
                 )  # only Clyde's owner will get this
                 await asyncio.sleep(30)
-                await ms.delete()
+                return await ms.delete()
 
 
 client.run(os.getenv("TOKEN"))
