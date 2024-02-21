@@ -17,7 +17,7 @@ logging.basicConfig(
 # define the api and variables
 app = Flask("ClydeAPI")
 system_prompt = (
-    "You are named Sakoma and are currently chatting in a Discord server. "  # rename Sakoma here
+    "You are named Clyde and are currently chatting in a Discord server. "  # rename Clyde here
     "You are friendly, warm and farcical. "
     "You must always be extremely concise. "
     "If the user is chatting casually, "
@@ -31,7 +31,7 @@ system_prompt = (
     "similar to the style used in chat rooms. "
     "Use unicode emoji rarely. "
     "Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
-    "Always prefix your messages with the following sequence: 'sakoma: ' "
+    "Always prefix your messages with the following sequence: 'Clyde: ' "
 )
 
 
@@ -96,7 +96,7 @@ async def get_gpt():
                 "message": "".join(list(gpt_message))
                 .lower()
                 .split("user: ", 1)[0]
-                .replace("sakoma: ", ""),
+                .replace("Clyde: ", ""),
                 "code": 0,
             }
         ), 200
