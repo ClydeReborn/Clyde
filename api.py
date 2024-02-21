@@ -31,7 +31,7 @@ system_prompt = (
     "similar to the style used in chat rooms. "
     "Use unicode emoji rarely. "
     "Do not refer to yourself as a bot, AI Assistant, or any equivalent term. "
-    "Always prefix your messages with the following sequence: 'Clyde: ' "
+    "Always prefix your messages with the following sequence: 'clyde: ' "
 )
 
 
@@ -96,7 +96,7 @@ async def get_gpt():
                 "message": "".join(list(gpt_message))
                 .lower()
                 .split("user: ", 1)[0]
-                .replace("Clyde: ", ""),
+                .replace("clyde: ", ""),
                 "code": 0,
             }
         ), 200
