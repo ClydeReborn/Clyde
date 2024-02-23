@@ -1,18 +1,25 @@
 # Clyde
 A recreation of Discord's cancelled AI chatbot: Clyde.
 
-# Story
+## Story
 On March 2nd 2023, Discord introduced Clyde, an AI chatbot based on OpenAI's ChatGPT, however it had many flaws, and all people hated it, mostly from NTTS' (No Text To Speech) audience, and Discord killed Clyde on December 1st 2023, as it would cost Discord a lot of money and so they decided to shut it down, the EOL date was announced on November 5th 2023 and all of @debarkak's friends and everyone in the Chomu Paradise Club panicked and was very sad (infact Bohdan threw his A30s and cracked the screen even more than it was), however Luna knew that this would happen, and already started working on a backup.
 
-# Information
-### Name
-The name for this bot should be Clyde, but you can rename it. The pre-deployed bot's name was Sakoma, we moved a to proper Clyde bot account.
+## Information
+#### Name
+The name for this bot should be Clyde, but you can rename it.<br>
+The pre-deployed bot's name was Sakoma, we moved a to proper Clyde bot account.
 
-### Programming Languages
-Clyde uses Python for the bot/API and Shell for launching it.
+#### Programming Languages
+Clyde uses Python for literally everything except spawning in the subprocesses, that's done by Bash.
 
-### AI model
+#### AI Models
 Clyde tries to use the best providers from [python-tgpt](https://github.com/Simatwa/python-tgpt) and [gpt4free](https://github.com/xtekky/gpt4free), these are subject to change depending on what providers are online.
+
+Currently we use these:
+- [Phind@python-tgpt](https://github.com/Simatwa/python-tgpt/blob/main/src/pytgpt/phind/main.py): GPT-3.5
+- [GeminiProChat@g4f](https://github.com/xtekky/gpt4free/blob/main/g4f/Provider/GeminiProChat.py)[#1601](https://github.com/xtekky/gpt4free/pull/1601): Gemini Pro*
+
+<sub><sup>*Tends to censor out your prompts; it will not respond to any prompts that consist mainly of swear words.</sub></sup>
 
 We would recommend to use one of the following providers for your instance of Clyde:
 - gpt4free: Bing¹, GeminiProChat², Llama2⁵, Phind⁴
@@ -24,32 +31,33 @@ We would recommend to use one of the following providers for your instance of Cl
 <sub><sup>⁴May give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
 <sub><sup>⁵May work abnormally slow or not return any responses.</sub></sup>
 
-# How to run?
+## How to run?
+#### Steps Required
 1. Clone this repo.
 ```sh
+# Clone the repo into your machine
 git clone https://github.com/ClydeReborn/Clyde
 ```
 
-2. Install Python and required modules.
+2. Run `clyde.sh` to immediately configure a default copy of Clyde.<br>
+If you need to run a selfbot instead, run this command:
 ```sh
-pip install -U -r requirements.txt
+# Overwrite the bot symbolic link with a selfbot symbolic link
+ln -sf clyde.selfbot.py clyde.py
 ```
+<sub><sup>Be careful when running Clyde as a selfbot, as it violates Discord ToS if you do so.</sub></sup>
 
-3. Open one of the `clyde.*.py` files, and make sure you have put your token in the `.env` file.
-```
+4. Put your bot or user token in `.env` and run `clyde.sh` again to run Clyde. 
+```sh
+# Example of .env
 TOKEN=<TOKEN_GOES_HERE>
 ```
 
-4. Replace `<TOKEN_GOES_HERE>` with your account token.<br>
-Use a bot token for the bot version, or a user token for the selfbot version.*
-
-<sub><sup>*Be careful when running Clyde as a selfbot, as it violates Discord ToS if you do so.</sub></sup>
-
-### Testing Providers
-To check working providers, run `python test_clyde_full.py` for a comprehensive test, or run `python test_clyde_quick.py` for a quick test.<br>
+#### Testing Providers
+To check working providers, check out the [Tests](https://github.com/ClydeReborn/Tests).<br>
 The comprehensive test may take a longer time to finish!
 
-# Required OS
+## Required OS
 * Clyde can only run on Linux. We recommend using Arch Linux, Fedora or Debian for this.<br>
 If you're using Windows, you may be able to run Clyde on WSL.
 
