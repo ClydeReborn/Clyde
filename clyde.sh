@@ -13,4 +13,4 @@ fi
 source .venv/bin/activate
  
 echo "Starting up Clyde..."
-python mux.py
+python -u mux.py

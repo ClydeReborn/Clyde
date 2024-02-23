@@ -1,34 +1,39 @@
-import os
-import subprocess
 import asyncio
 import sys
 
-api = subprocess.Popen(
-    ["python", "api.py"], stderr=subprocess.PIPE, stdout=subprocess.PIPE
-)
-clyde = subprocess.Popen(
-    ["python", "clyde.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-)
+async def _read_stream(stream, cb):  
+    while True:
+        line = await stream.readline()
+        if line:
+            cb(line)
+        else:
+            break
+
+async def _stream_subprocess(cmd, stdout_cb, stderr_cb):  
+    process = await asyncio.create_subprocess_exec(*cmd,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+
+    await asyncio.gather(
+        _read_stream(process.stdout, stdout_cb),
+        _read_stream(process.stderr, stderr_cb)
+    )
+    return await process.wait()
 
 
-async def output(proc, buf):
-    for c in iter(lambda: proc.read(1), b""):
-        buf.write(c)
+def execute(cmd, stdout_cb, stderr_cb):  
+    loop = asyncio.get_event_loop()
+    rc = loop.run_until_complete(
+        _stream_subprocess(
+            cmd,
+            stdout_cb,
+            stderr_cb,
+    ))
+    loop.close()
+    return rc
 
-
-async def main():
-    if os.environ.get("VIRTUAL_ENV") != f"{os.getcwd()}/.venv":
-        print("Your virtual environment is not correctly configured.\n")
-        print(f"Your virtual environment path is: {os.environ.get('VIRTUAL_ENV')}")
-        sys.exit(1)
-
-    tasks = [
-        output(api.stderr, sys.stderr.buffer),
-        output(clyde.stderr, sys.stderr.buffer),
-        output(clyde.stdout, sys.stdout.buffer),
-    ]
-    await asyncio.gather(*tasks)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+if __name__ == '__main__':  
+    print(execute(
+        ["bash", "-c", "python -u api.py & python -u clyde.py"],
+        lambda out: print(out.decode("utf-8", errors="ignore"), end=""),
+        lambda err: print(err.decode("utf-8", errors="ignore"), end=""),
+    ))
