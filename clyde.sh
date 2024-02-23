@@ -5,6 +5,7 @@ if [ ! -d .venv ]; then
   mv API/* .
   rm -rf API
   python -m venv .venv
+  source .venv/bin/activate
   pip install -U -r requirements.txt
   ln -sf clyde.bot.py clyde.py
 fi

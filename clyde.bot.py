@@ -1,4 +1,6 @@
 import os
+print(f"Your virtual environment path: {os.getenv('VIRTUAL_ENV')}")
+
 import asyncio
 import secrets
 import random

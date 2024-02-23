@@ -1,3 +1,4 @@
+import os
 import subprocess
 import asyncio
 import sys
@@ -16,6 +17,11 @@ async def output(proc, buf):
 
 
 async def main():
+    if os.environ.get("VIRTUAL_ENV") != f"{os.getcwd()}/.venv":
+        print("Your virtual environment is not correctly configured.\n")
+        print(f"Your virtual environment path is: {os.environ.get('VIRTUAL_ENV')}")
+        sys.exit(1)
+
     tasks = [
         output(api.stderr, sys.stderr.buffer),
         output(clyde.stderr, sys.stderr.buffer),
