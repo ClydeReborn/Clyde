@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 # prevent leaking any tokens to cause bans or blocks
 load_dotenv()
 
-owner = 603635602809946113
+error_chanel = 1210637533310877736
 
 
 class Clyde(discord.Client):
@@ -53,8 +53,36 @@ class Clyde(discord.Client):
                     except httpx.ConnectError:
                         # server offline error response
                         await ms.edit("\u200b:earth_africa::x:")
-                        user = self.get_user(owner)
-                        await user.send(
+                        channel = self.get_channel(error_channel)
+                        await channel.send(
+                            "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
+                            "Please restart the API server before trying to use ChatGPT."
+                        )
+                        await asyncio.sleep(30)
+                        return await ms.delete()
+
+                    if response.status_code == 200:
+                        # correct response
+                        gpt_message = response.json()["message"]
+                        if len(gpt_message) <= 2000:
+                            return await ms.edit(gpt_message)
+                        # too large response
+                        await ms.edit("\u200b:scroll::warning:")
+                        await asyncio.sleep(30)
+                        return await ms.delete()
+
+                async with httpx.AsyncClient(timeout=None) as web:
+                    try:
+                        # run ai externally via an attached api
+                        response = await web.post(
+                            "http://127.0.0.1:8001/gpt",
+                            json={"prompt": prompt, "type": "tgpt"},
+                        )
+                    except httpx.ConnectError:
+                        # server offline error response
+                        await ms.edit("\u200b:earth_africa::x:")
+                        channel = self.get_channel(error_channel)
+                        await channel.send(
                             "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
                             "Please restart the API server before trying to use ChatGPT."
                         )
@@ -72,10 +100,10 @@ class Clyde(discord.Client):
                         return await ms.delete()
 
                     # error response
-                    user = self.get_user(owner)
+                    channel = self.get_channel(error_channel)
                     newline = "\n"
                     await ms.edit("\u200b:scroll::x:")
-                    await user.send(
+                    await channel.send(
                         f"# Oh shit!\n"
                         f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
                         f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
