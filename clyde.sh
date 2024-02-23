@@ -1,4 +1,6 @@
 #!/bin/bash
+shopt -s extglob
+
 if [ ! -d .venv ]; then
   echo "Configuring Clyde..."
   git clone https://github.com/ClydeReborn/API
