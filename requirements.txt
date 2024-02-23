@@ -4,7 +4,7 @@
 
 # bot library (select one, git dependency for selfbot, discord.py proper for bot, these cannot be combined)
 # git+https://github.com/dolfies/discord.py-self
-# discord.py
+discord.py
 
 # gpt libraries
 python-tgpt
