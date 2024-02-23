@@ -1,5 +1,9 @@
+# symlink
 clyde.py
 
+# environments
 .venv
 .env
+
+# parts of the api
 gemini.cookie

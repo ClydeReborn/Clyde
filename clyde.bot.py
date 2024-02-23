@@ -15,7 +15,8 @@ from dotenv import load_dotenv
 # prevent leaking any tokens to cause bans or blocks
 load_dotenv()
 
-error_channel = 1210637533310877736
+owner = os.getenv("OWNER")
+error_channel = os.getenv("ERROR_CHANNEL")
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True

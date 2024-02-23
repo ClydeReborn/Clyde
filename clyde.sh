@@ -2,7 +2,7 @@
 if [ ! -d .venv ]; then
   echo "Configuring Clyde..."
   git clone https://github.com/ClydeReborn/API
-  mv API/* .
+  mv API/!(README.md) .
   rm -rf API
   python -m venv .venv
   source .venv/bin/activate

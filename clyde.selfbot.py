@@ -1,4 +1,6 @@
 import os
+
+print(f"Your virtual environment path: {os.getenv('VIRTUAL_ENV')}")
 import asyncio
 
 import discord
@@ -8,7 +10,8 @@ from dotenv import load_dotenv
 # prevent leaking any tokens to cause bans or blocks
 load_dotenv()
 
-error_chanel = 1210637533310877736
+owner = os.getenv("OWNER")
+error_chanel = os.getenv("ERROR_CHANNEL")
 
 
 class Clyde(discord.Client):
