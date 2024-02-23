@@ -95,6 +95,32 @@ async def on_message(message):
                     if len(gpt_message) <= 2000:
                         return await message.reply(gpt_message)
 
+            async with httpx.AsyncClient(timeout=None) as web:
+                try:
+                    # retry the above if failed with g4f
+                    response = await web.post(
+                        "http://127.0.0.1:8001/gpt",
+                        json={"prompt": prompt, "type": "tgpt"},
+                    )
+                except httpx.ConnectError:
+                    # server offline error response
+                    ms = await message.reply(
+                        random.choice(clyde_error_messages), mention_author=False
+                    )
+                    user = client.get_user(owner)
+                    return await user.send(
+                        "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
+                        "Please restart the API server before trying to use ChatGPT."
+                    )  # only Clyde's owner will get this
+                    await asyncio.sleep(30)
+                    await ms.delete()
+
+                if response.status_code == 200:
+                    # correct response
+                    gpt_message = response.json()["message"]
+                    if len(gpt_message) <= 2000:
+                        return await message.reply(gpt_message)
+                        
                 # error response
                 user = client.get_user(owner)
                 newline = "\n"
