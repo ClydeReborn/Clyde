@@ -12,21 +12,18 @@ if [ ! -d .venv ]; then
   pip install -U -r requirements.txt
   echo ""
   read -p "Do you want to run a selfbot? (not recommended) [Y/n] " choice
-  case $choice in
-    Y | y)
-        echo "Making a selfbot..."
-        ln -sf clyde.selfbot.py clyde.py
-        ;;
-    *)
-        echo "Continuing to make a bot..."
-        ln -sf clyde.bot.py clyde.py
-        ;;
-  esac
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "Making a selfbot..."
+      ln -sf clyde.selfbot.py clyde.py
+  else
+      echo "Continuing to make a bot..."
+      ln -sf clyde.bot.py clyde.py
+  fi
 fi
 
 if [ ! -f .env ]; then
   echo "Creating .env file..."
-  echo "TOKEN=\"<TOKEN_GOES_HERE>\"" >> .env
+  echo 'TOKEN="<TOKEN_GOES_HERE>"' >> .env
   echo "OWNER=<YOUR_DISCORD_ID_GOES_HERE>" >> .env
   echo "ERROR_CHANNEL=<ID_OF_ERROR_LOGGING_CHANNEL_GOES_HERE>" >> .env
   echo ""
