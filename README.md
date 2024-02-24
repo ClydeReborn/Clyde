@@ -39,22 +39,12 @@ We would recommend to use one of the following providers for your instance of Cl
 git clone https://github.com/ClydeReborn/Clyde
 ```
 
-2. Run `clyde.sh` to immediately configure a default copy of Clyde.<br>
-If you need to run a selfbot instead, run this command:
-```sh
-# Overwrite the bot symbolic link with a selfbot symbolic link
-ln -sf clyde.selfbot.py clyde.py
-```
+2. Run `clyde.sh` to immediately configure a copy of Clyde.<br>
 <sub><sup>Be careful when running Clyde as a selfbot, as it violates Discord ToS if you do so.</sub></sup>
 
-4. Put your bot or user token in `.env` and run `clyde.sh` again to run Clyde. 
-```sh
-# Example of .env
-TOKEN=<TOKEN_GOES_HERE>
-OWNER=<YOUR_DISCORD_ID_GOES_HERE>
-ERROR_CHANNEL=<ID_OF_ERROR_LOGGING_CHANNEL_GOES_HERE>
-```
+3. Fill in your bot or user token, your user ID and an error logging channel the in `.env` file.
 
+4. Run `clyde.sh` again to run Clyde.
 #### Testing Providers
 To check working providers, check out the [Tests](https://github.com/ClydeReborn/Tests).<br>
 The comprehensive test may take a longer time to finish!
