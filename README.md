@@ -20,14 +20,14 @@ Currently we use these:
 - [Aura@g4f](https://github.com/xtekky/gpt4free/blob/main/g4f/Provider/Aura.py): GPT-3.5
 
 We would recommend to use one of the following providers for your instance of Clyde:
-- gpt4free: Bing¹, Aura, Llama2⁵, Phind⁴
-- python-tgpt: Llama2⁵, Phind³
+- gpt4free: Bing, Aura, Llama2, Phind
+- 
+- python-tgpt: Llama2, Phind
 
-<sub><sup>¹May give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
-<sub><sup>²If using the vendored provider file; check the [Providers](https://github.com/ClydeReborn/Providers).</sub></sup><br>
-<sub><sup>³Has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
-<sub><sup>⁴May give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
-<sub><sup>⁵May work abnormally slow or not return any responses.</sub></sup>
+<sub><sup>Bing may give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
+<sub><sup>Phind (TGPT) has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
+<sub><sup>Phind (G4F) may give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
+<sub><sup>Llama2 may work abnormally slow or not return any responses.</sub></sup>
 
 ## How to run?
 #### Steps Required
