@@ -94,7 +94,7 @@ async def on_message(message):
                 if response.status_code == 200:
                     # correct response
                     gpt_message = response.json()["message"]
-                    if len(gpt_message) <= 2000:
+                    if 0 < len(gpt_message) <= 2000:
                         return await message.reply(gpt_message)
 
             async with httpx.AsyncClient(timeout=None) as web:
@@ -120,7 +120,7 @@ async def on_message(message):
                 if response.status_code == 200:
                     # correct response
                     gpt_message = response.json()["message"]
-                    if len(gpt_message) <= 2000:
+                    if 0 < len(gpt_message) <= 2000:
                         return await message.reply(gpt_message)
 
                 # error response
