@@ -21,7 +21,6 @@ Currently we use these:
 
 We would recommend to use one of the following providers for your instance of Clyde:
 - gpt4free: Bing, Aura, Llama2, Phind
-- 
 - python-tgpt: Llama2, Phind
 
 <sub><sup>Bing may give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
