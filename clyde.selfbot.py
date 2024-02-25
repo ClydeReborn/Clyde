@@ -56,9 +56,9 @@ class Clyde(discord.Client):
                     except httpx.ConnectError:
                         # server offline error response
                         await ms.edit("\u200b:earth_africa::x:")
-                        channel = self.get_channel(error_channel)
+                        channel = await self.fetch_channel(error_channel)
                         await channel.send(
-                            "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
+                            "# @everyone, we have an error!\nError 2 has occurred: The API server is offline.\n\n"
                             "Please restart the API server before trying to use ChatGPT."
                         )
                         await asyncio.sleep(30)
@@ -84,9 +84,9 @@ class Clyde(discord.Client):
                     except httpx.ConnectError:
                         # server offline error response
                         await ms.edit("\u200b:earth_africa::x:")
-                        channel = self.get_channel(error_channel)
+                        channel = await self.fetch_channel(error_channel)
                         await channel.send(
-                            "# Oh shit!\nError 2 has occurred: The API server is offline.\n\n"
+                            "# @everyone, we have an error!\nError 2 has occurred: The API server is offline.\n\n"
                             "Please restart the API server before trying to use ChatGPT."
                         )
                         await asyncio.sleep(30)
@@ -103,11 +103,11 @@ class Clyde(discord.Client):
                         return await ms.delete()
 
                     # error response
-                    channel = self.get_channel(error_channel)
+                    channel = await self.fetch_channel(error_channel)
                     newline = "\n"
                     await ms.edit("\u200b:scroll::x:")
                     await channel.send(
-                        f"# Oh shit!\n"
+                        f"# @everyone, we have an error!\n"
                         f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
                         f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
                         f"If someone else got this error, tell them to retry their request."
