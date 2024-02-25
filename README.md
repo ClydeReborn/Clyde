@@ -17,19 +17,16 @@ Clyde tries to use the best providers from [python-tgpt](https://github.com/Sima
 
 Currently we use these:
 - [Phind@python-tgpt](https://github.com/Simatwa/python-tgpt/blob/main/src/pytgpt/phind/main.py): GPT-3.5
-- [GeminiProChat@g4f](https://github.com/xtekky/gpt4free/blob/main/g4f/Provider/GeminiProChat.py)[#1601](https://github.com/xtekky/gpt4free/pull/1601): Gemini Pro*
-
-<sub><sup>*Tends to censor out your prompts; it will not respond to any prompts that consist mainly of swear words.</sub></sup>
+- [Aura@g4f](https://github.com/xtekky/gpt4free/blob/main/g4f/Provider/Aura.py): GPT-3.5
 
 We would recommend to use one of the following providers for your instance of Clyde:
-- gpt4free: Bing¹, GeminiProChat², Llama2⁵, Phind⁴
-- python-tgpt: Llama2⁵, Phind³
+- gpt4free: Bing, Aura, Llama2, Phind
+- python-tgpt: Llama2, Phind
 
-<sub><sup>¹May give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
-<sub><sup>²If using the vendored provider file; check the [Providers](https://github.com/ClydeReborn/Providers).</sub></sup><br>
-<sub><sup>³Has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
-<sub><sup>⁴May give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
-<sub><sup>⁵May work abnormally slow or not return any responses.</sub></sup>
+<sub><sup>Bing may give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
+<sub><sup>Phind (TGPT) has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
+<sub><sup>Phind (G4F) may give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
+<sub><sup>Llama2 may work abnormally slow or not return any responses.</sub></sup>
 
 ## How to run?
 #### Steps Required
