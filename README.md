@@ -17,16 +17,17 @@ Clyde tries to use the best providers from [python-tgpt](https://github.com/Sima
 
 Currently we use these:
 - [Phind@python-tgpt](https://github.com/Simatwa/python-tgpt/blob/main/src/pytgpt/phind/main.py): GPT-3.5
-- [Aura@g4f](https://github.com/xtekky/gpt4free/blob/main/g4f/Provider/Aura.py): GPT-3.5
+- [FlowGpt@g4f](https://github.com/xtekky/gpt4free/blob/main/g4f/Provider/FlowGpt.py): Gemini Pro
 
 We would recommend to use one of the following providers for your instance of Clyde:
-- gpt4free: Bing, Aura, Llama2, Phind
+- gpt4free: Bing, FlowGpt, Llama2, Phind
 - python-tgpt: Llama2, Phind
 
 <sub><sup>Bing may give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
 <sub><sup>Phind (TGPT) has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
 <sub><sup>Phind (G4F) may give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
 <sub><sup>Llama2 may work abnormally slow or not return any responses.</sub></sup>
+<sub><sup>FlowGpt can be easily ratelimited.</sub></sup>
 
 ## How to run?
 #### Steps Required
