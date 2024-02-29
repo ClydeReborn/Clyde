@@ -35,4 +35,5 @@ fi
 source .venv/bin/activate
  
 echo "Starting up Clyde..."
+pkill -O 60 -9 python
 python -u mux.py
