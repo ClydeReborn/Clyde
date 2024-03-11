@@ -1,5 +1,5 @@
 # Clyde
-A recreation of Discord's cancelled AI chatbot: Clyde.
+Recreation of Discord's cancelled AI chatbot: Clyde.
 
 ## Information
 #### Name
