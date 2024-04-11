@@ -45,7 +45,8 @@ To check working providers, check out the [Tests](https://github.com/ClydeReborn
 The comprehensive test may take a longer time to finish!
 
 ## Required OS
-* Clyde can only run on Linux. We recommend using Arch Linux, Fedora or Debian for this.<br>
-If you're using Windows, you may be able to run Clyde on WSL.
+* Clyde can only run on Linux. We recommend using Arch Linux, Fedora or Debian for this. <sub><sup>Don't use Ubuntu</sub></sup>
+* If you're using Windows, you may be able to run Clyde on WSL. <sub><sup>Don't let microsoft bloat it with ads</sub></sup>
+* We are not sure if this will run on macOS/BSD as it's not tested <sub><sup>Someone test it pls</sub></sup>
 
-Enjoy!
+### Enjoy!
