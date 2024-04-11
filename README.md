@@ -10,21 +10,7 @@ The pre-deployed bot's name was Sakoma, we moved a to proper Clyde bot account.
 Clyde uses Python for literally everything except spawning in the subprocesses, that's done by Bash.
 
 #### AI Models
-Clyde tries to use the best providers from [python-tgpt](https://github.com/Simatwa/python-tgpt) and [gpt4free](https://github.com/xtekky/gpt4free), these are subject to change depending on what providers are online.
-
-Currently we use these:
-- [Phind@python-tgpt](https://github.com/Simatwa/python-tgpt/blob/main/src/pytgpt/phind/main.py): GPT-3.5
-- [FlowGpt@g4f](https://github.com/xtekky/gpt4free/blob/main/g4f/Provider/FlowGpt.py): Gemini Pro
-
-We would recommend to use one of the following providers for your instance of Clyde:
-- gpt4free: Bing, FlowGpt, Llama2, Phind
-- python-tgpt: Llama2, Phind
-
-<sub><sup>Bing may give CAPTCHAs after a while or when providing the wrong values.</sub></sup><br>
-<sub><sup>Phind (TGPT) has the tendency to say something unrelated if it didn't understand your prompt.</sub></sup><br>
-<sub><sup>Phind (G4F) may give errors or blank responses, use the `python-tgpt` implementation.</sub></sup><br>
-<sub><sup>Llama2 may work abnormally slow or not return any responses.</sub></sup>
-<sub><sup>FlowGpt can be easily ratelimited.</sub></sup>
+Clyde tries to use any working provider from either [python-tgpt](https://github.com/Simatwa/python-tgpt) or [gpt4free](https://github.com/xtekky/gpt4free), the current provider will change over time.
 
 ## How to run?
 #### Steps Required
@@ -45,8 +31,11 @@ To check working providers, check out the [Tests](https://github.com/ClydeReborn
 The comprehensive test may take a longer time to finish!
 
 ## Required OS
-* Clyde can only run on Linux. We recommend using Arch Linux, Fedora or Debian for this. <sub><sup>Don't use Ubuntu</sub></sup>
-* If you're using Windows, you may be able to run Clyde on WSL. <sub><sup>Don't let microsoft bloat it with ads</sub></sup>
-* We are not sure if this will run on macOS/BSD as it's not tested <sub><sup>Someone test it pls</sub></sup>
+* Clyde can only run on Linux. We recommend using Arch Linux, Fedora or Debian for this.<br>
+<sub><sup>Don't use Ubuntu!</sub></sup>
+* If you're using Windows, you may be able to run Clyde on WSL.<br>
+<sub><sup>Don't let Microsoft bloat it up with ads!</sub></sup>
+* We are not sure if this will run on macOS/BSD as it has not been tested.<br>
+<sub><sup>Someone test it, and report it in [the issues](https://github.com/ClydeReborn/Clyde/issues/new)!</sub></sup>
 
 ### Enjoy!
