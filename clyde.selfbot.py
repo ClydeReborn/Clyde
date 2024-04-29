@@ -109,10 +109,11 @@ class Clyde(discord.Client):
                     await channel.send(
                         f"# @everyone, we have an error!\n"
                         f"Error {response.json()['code']} has occurred: {response.json()['error']}\n"
-                        f"The following errors were caught:\n{newline.join(response.json()['errors'])}\n\n"
+                        f"The recent errors caught were:\n{newline.join(response.json()['errors'][-5:])}\n\n"
                         f"If someone else got this error, tell them to retry their request."
-                    )  # only the owner id will get this
-                    await asyncio.sleep(30)
+                    )
+                    await asyncio.sleep(5)
+                    
                     return await ms.delete()
 
 
