@@ -23,7 +23,7 @@ fi
 
 if [ ! -f .env ]; then
   echo "Creating .env file..."
-  echo 'TOKEN="<TOKEN_GOES_HERE>"' >> .env
+  echo 'TOKEN="<TOKEN_GOES_HERE>"' > .env
   echo "OWNER=<YOUR_DISCORD_ID_GOES_HERE>" >> .env
   echo "ERROR_CHANNEL=<ID_OF_ERROR_LOGGING_CHANNEL_GOES_HERE>" >> .env
   echo ""
