@@ -37,10 +37,9 @@ def execute(cmd, stdout_cb, stderr_cb):
 
 
 if __name__ == "__main__":
-    print(
-        execute(
-            ["bash", "-c", "python -u api.py & python -u clyde.py"],
-            lambda out: print(out.decode("utf-8", errors="ignore"), end=""),
-            lambda err: print(err.decode("utf-8", errors="ignore"), end=""),
-        )
+    exit_code = execute(
+        ["bash", "-c", "python -u api.py & python -u clyde.py"],
+        lambda out: print(out.decode("utf-8", errors="ignore"), end=""),
+        lambda err: print(err.decode("utf-8", errors="ignore"), end=""),
     )
+    sys.exit(exit_code)
