@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 owner = os.getenv("OWNER")
-error_chanel = os.getenv("ERROR_CHANNEL")
+error_channel = os.getenv("ERROR_CHANNEL")
 
 
 class Clyde(discord.Client):
