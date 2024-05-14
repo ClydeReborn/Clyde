@@ -18,6 +18,7 @@ load_dotenv()
 owner = os.getenv("OWNER")
 error_channel = os.getenv("ERROR_CHANNEL")
 intents = discord.Intents.all()
+bot_name = "Clyde"
 
 client = commands.Bot(
     command_prefix=secrets.token_urlsafe(8),
@@ -29,17 +30,23 @@ client = commands.Bot(
 
 @client.event
 async def on_connect():
-    print("Clyde has connected to Discord.")
+    print(f"{bot_name} has connected to Discord.")
 
 
 @client.event
 async def on_ready():
-    print("Clyde ready!")
+    print(f"{bot_name} ready!")
+
+
+@client.event
+async def on_guild_join(guild):
+    me = guild.get_member(client.user.id)
+    await me.edit(nick=bot_name)
 
 
 @client.event
 async def on_message(message):
-    # specify user ids forbidden from using clyde, eg. 691187099570929684
+    # specify user ids forbidden from using Clyde, eg. 691187099570929684
     forbidden = []
 
     if message.author.id in forbidden:
