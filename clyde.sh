@@ -1,9 +1,12 @@
 #!/bin/bash
+set -e
 shopt -s extglob
+
+BOTNAME="Clyde"
 
 if [ ! -d .venv ]; then
   echo ""
-  echo "Configuring Clyde..."
+  echo "Configuring $BOTNAME..."
   git clone https://github.com/ClydeReborn/API
   mv API/!(README.md) .
   rm -rf API
@@ -11,7 +14,7 @@ if [ ! -d .venv ]; then
   source .venv/bin/activate
   pip install -U -r requirements.txt
   echo ""
-  read -p "Do you want to run a selfbot? (not recommended) [Y/n] " choice
+  read -p "Do you want to run a selfbot? (not recommended) [y/n] " choice
   if [[ $REPLY =~ ^[Yy]$ ]]; then
       echo "Making a selfbot..."
       ln -sf clyde.selfbot.py clyde.py
@@ -33,7 +36,7 @@ if [ ! -f .env ]; then
 fi
 
 source .venv/bin/activate
- 
-echo "Starting up Clyde..."
+echo "$BOTNAME configured successfully!"
+echo "Starting up $BOTNAME..."
 pkill -O 60 -9 python
 python -u mux.py

@@ -16,13 +16,13 @@ error_channel = os.getenv("ERROR_CHANNEL")
 
 class Clyde(discord.Client):
     async def on_connect(self):
-        print("Clyde has connected to Discord.")
+        print(f"{bot_name} has connected to Discord.")
 
     async def on_ready(self):
-        print("Clyde ready!")
+        print(f"{bot_name} ready!")
 
     async def on_message(self, message):
-        # specify user ids forbidden from using clyde, eg. 691187099570929684
+        # specify user ids forbidden from using Clyde, eg. 691187099570929684
         forbidden = []
 
         if message.author.id in forbidden:
