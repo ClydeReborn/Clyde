@@ -4,6 +4,7 @@ import base64
 import difflib
 import logging
 import asyncio
+import contextlib
 from typing import Optional, Tuple, Dict, List
 
 import hikari
@@ -140,7 +141,9 @@ class AIView(miru.View):
         """Disable all buttons when the view times out."""
         for child in self.children:
             child.disabled = True
-        await self.message.edit(components=self.build())
+
+        with contextlib.suppress(hikari.ForbiddenError):
+            await self.message.edit(components=self.build())
 
 
 class AIService:
