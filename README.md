@@ -3,14 +3,19 @@ Recreation of Discord's cancelled AI chatbot.
 
 ## Information
 #### Name
-The name for this bot should be Clyde, but you can rename it.<br>
-The pre-deployed bot's name was Sakoma, we moved a to proper Clyde bot account.
+This bot can be named however you like, we don't recommend using `Clyde`, as Discord can strike your bot down for impersonation. Use a unique name.
 
 #### Programming Languages
-Clyde uses Python for literally everything except spawning in the subprocesses, that's done by Bash.
+Clyde uses Python for the AI magic we do on it.
 
 #### AI Models
-Clyde tries to use any working provider from either [python-tgpt](https://github.com/Simatwa/python-tgpt) or [gpt4free](https://github.com/xtekky/gpt4free), the current provider will change over time.
+Clyde uses a selection of over 20 models from Google, Meta, Mistral, DeepSeek and many more, you can pick any one you like.
+
+#### Image Generation
+Clyde can now generate images using the Google's Gemini Native Image Generation, provided by [Image Router](https://ir.myqa.cc). Provide it an instruction, and it'll try its best to follow.
+
+### Pricing
+Clyde exclusively uses free plans of AI APIs, so you don't go bankrupt from all that token throughput. Don't you worry, we are on the lookout for free AI APIs all the time.
 
 ## How to run?
 #### Steps Required
@@ -20,22 +25,14 @@ Clyde tries to use any working provider from either [python-tgpt](https://github
 git clone https://github.com/ClydeReborn/Clyde
 ```
 
-2. Run `./clyde.sh` to immediately configure a copy of Clyde.<br>
-<sub><sup>Be careful when running Clyde as a selfbot, as it violates Discord ToS if you do so.</sub></sup>
+2. Fill in required values in `.env.example`, then rename it to `.env`.
 
-3. Fill in your bot or user token, your user ID and an error logging channel the in `.env` file.
-
-4. Run `./clyde.sh` again to run Clyde.
-#### Testing Providers
-To check working providers, check out the [Tests](https://github.com/ClydeReborn/Tests).<br>
-The comprehensive test may take a longer time to finish!
+3. Run Clyde by using `python main.py`. Docker installations are also supported, use them for secure deployment.
 
 ## Required OS
-* Clyde can only run on Linux. We recommend using Arch Linux, Fedora or Debian for this.<br>
-<sub><sup>Don't use Ubuntu!</sub></sup>
-* If you're using Windows, you may be able to run Clyde on WSL.<br>
-<sub><sup>Don't let Microsoft bloat it up with ads!</sub></sup>
-* We are not sure if this will run on macOS/BSD as it has not been tested.<br>
-<sub><sup>Someone test it, and report it in [the issues](https://github.com/ClydeReborn/Clyde/issues/new)!</sub></sup>
+* Clyde can run on a variety of operating systems, including Windows.
+* macOS systems are untested.
+
+<sub><sup>Please test it, and report it in [the issues](https://github.com/ClydeReborn/Clyde/issues/new)!</sub></sup>
 
 ### Enjoy!
