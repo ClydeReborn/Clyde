@@ -1,22 +1,12 @@
-# dependencies required for Clyde
-# a curated selection of dependencies guaranteeing fast asynchronous running of the bot and API
-# it will not bloat your computer up with python packages
+hikari>=2.2.0
+hikari-lightbulb>=3.0.0a16
+hikari-miru>=4.0.0
 
-# bot library (select one, git dependency for selfbot, discord.py proper for bot, these cannot be combined)
-# git+https://github.com/dolfies/discord.py-self
-discord.py
+httpx
+groq
+google-genai
+google-generativeai
 
-# gpt libraries
-python-tgpt
-g4f
-
-# async fix
-nest-asyncio
-
-# anti-token leak
 python-dotenv
 
-# api requests
-brotli
-httpx
-flask[async]
+pillow
