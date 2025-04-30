@@ -107,9 +107,10 @@ chat_histories: Dict[int, List[str]] = {}
 
 
 class AIView(miru.View):
-    def __init__(self, entries: list[str]) -> None:
+    def __init__(self, entries: list[str], interaction: hikari.CommandInteraction) -> None:
         super().__init__(timeout=60)  # Increased timeout to 60 seconds is more user-friendly
         self.entries = entries
+        self._interaction = interaction
         self.index = 0
 
         # Initialize buttons with proper disabled states
@@ -143,7 +144,7 @@ class AIView(miru.View):
             child.disabled = True
 
         with contextlib.suppress(hikari.ForbiddenError):
-            await self.message.edit(components=self.build())
+            await self._interaction.edit_initial_response(components=self.build())
 
 
 class AIService:
@@ -385,7 +386,7 @@ class AIText(lightbulb.SlashCommand, name="text", description="Generate text wit
                         chunk = response[:split_idx].rstrip()
                         response = response[split_idx:].lstrip()
                         chunks.append(chunk)
-                    view = AIView(chunks)
+                    view = AIView(chunks, ctx.interaction)
                     await ctx.respond(chunks[0], components=view)
                     inter_client.start_view(view)
                 else:
