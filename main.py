@@ -107,8 +107,12 @@ chat_histories: Dict[int, List[str]] = {}
 
 
 class AIView(miru.View):
-    def __init__(self, entries: list[str], interaction: hikari.CommandInteraction) -> None:
-        super().__init__(timeout=60)  # Increased timeout to 60 seconds is more user-friendly
+    def __init__(
+        self, entries: list[str], interaction: hikari.CommandInteraction
+    ) -> None:
+        super().__init__(
+            timeout=60
+        )  # Increased timeout to 60 seconds is more user-friendly
         self.entries = entries
         self._interaction = interaction
         self.index = 0
@@ -161,11 +165,11 @@ class AIService:
 
     @staticmethod
     async def generate_text_with_gemini(
-            request: str,
-            model: str,
-            system_prompt: str,
-            user_id: int,
-            image: Optional[io.BytesIO] = None,
+        request: str,
+        model: str,
+        system_prompt: str,
+        user_id: int,
+        image: Optional[io.BytesIO] = None,
     ) -> Tuple[str, int]:
         """Generate text using Gemini models"""
         try:
@@ -181,12 +185,16 @@ class AIService:
                 ]
             else:
                 chat_histories.setdefault(user_id, []).append(request)
-                formatted_history = AIService.format_chat_history(chat_histories[user_id])
+                formatted_history = AIService.format_chat_history(
+                    chat_histories[user_id]
+                )
                 payload = [formatted_history]
 
             # Choose the correct API based on model
             if "gemma" in model.lower():
-                response = gemini_client.models.generate_content(model=model, contents=payload)
+                response = gemini_client.models.generate_content(
+                    model=model, contents=payload
+                )
             else:
                 response = gemini_client.models.generate_content(
                     model=model, config=config, contents=payload
@@ -203,7 +211,7 @@ class AIService:
 
     @staticmethod
     async def generate_text_with_groq(
-            request: str, model: str, system_prompt: str, user_id: int
+        request: str, model: str, system_prompt: str, user_id: int
     ) -> Tuple[str, int]:
         """Generate text using Groq models"""
         try:
@@ -257,7 +265,9 @@ class AIService:
                 return image, 200
 
         except httpx.HTTPStatusError as exc:
-            logger.error(f"HTTP error during image generation: {exc.response.status_code} - {exc.response.text}")
+            logger.error(
+                f"HTTP error during image generation: {exc.response.status_code} - {exc.response.text}"
+            )
             return f"HTTP error: {exc.response.status_code}", exc.response.status_code
         except Exception as exc:
             logger.error(f"Image generation error: {exc}")
@@ -265,11 +275,11 @@ class AIService:
 
 
 async def generate_text(
-        request: str,
-        model: str,
-        prompt: str,
-        user_id: int,
-        image: Optional[io.BytesIO] = None,
+    request: str,
+    model: str,
+    prompt: str,
+    user_id: int,
+    image: Optional[io.BytesIO] = None,
 ) -> Tuple[str, int]:
     """Unified text generation function that routes to appropriate service"""
     try:
@@ -291,12 +301,16 @@ async def on_starting(_: hikari.StartingEvent) -> None:
     """Handle bot startup event"""
     await client.start()
     logger.info("Bot is starting")
+
+
 bot.subscribe(hikari.StartingEvent, on_starting)
 
 
 async def on_started(_: hikari.StartedEvent) -> None:
     """Handle bot started event"""
     logger.info("Bot is now running")
+
+
 bot.subscribe(hikari.StartedEvent, on_started)
 
 
@@ -309,12 +323,16 @@ async def model_autocomplete(ctx: lightbulb.AutocompleteContext) -> None:
     all_models = [model for category in MODELS.values() for model in category]
 
     # Direct matches first
-    prefix_matches = [m for m in all_models if m.lower().startswith(current_value.lower())]
+    prefix_matches = [
+        m for m in all_models if m.lower().startswith(current_value.lower())
+    ]
     if prefix_matches:
         return await ctx.respond(prefix_matches[:25])
 
     # Then fuzzy matches
-    fuzzy_matches = difflib.get_close_matches(current_value, all_models, n=10, cutoff=0.3)
+    fuzzy_matches = difflib.get_close_matches(
+        current_value, all_models, n=10, cutoff=0.3
+    )
     if fuzzy_matches:
         return await ctx.respond(fuzzy_matches)
 
@@ -331,12 +349,16 @@ async def prompt_preset_autocomplete(ctx: lightbulb.AutocompleteContext) -> None
     current_value: str = ctx.focused.value or ""
 
     # Direct matches first
-    prefix_matches = [k for k in PROMPT_PRESETS if k.lower().startswith(current_value.lower())]
+    prefix_matches = [
+        k for k in PROMPT_PRESETS if k.lower().startswith(current_value.lower())
+    ]
     if prefix_matches:
         return await ctx.respond(prefix_matches)
 
     # Then fuzzy matches
-    fuzzy_matches = difflib.get_close_matches(current_value, PROMPT_PRESETS.keys(), n=5, cutoff=0.3)
+    fuzzy_matches = difflib.get_close_matches(
+        current_value, PROMPT_PRESETS.keys(), n=5, cutoff=0.3
+    )
     if fuzzy_matches:
         return await ctx.respond(fuzzy_matches)
 
@@ -378,7 +400,9 @@ class AIText(lightbulb.SlashCommand, name="text", description="Generate text wit
                 if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
                     chunks = []
                     while response:
-                        split_idx = response.rfind("\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH)
+                        split_idx = response.rfind(
+                            "\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH
+                        )
 
                         if split_idx in [-1, 0]:
                             split_idx = MAX_DISCORD_MESSAGE_LENGTH
@@ -394,10 +418,9 @@ class AIText(lightbulb.SlashCommand, name="text", description="Generate text wit
             else:
                 embed = hikari.Embed(
                     title="Error",
-                    description=f"An error occurred:\n```py\n{str(response)}\n```",
+                    description=f"A response failed to generate:\n```py\n{str(response)}\n```",
                     color=hikari.Color.from_hex_code("#ed4245"),
                 )
-                embed.set_footer(f"Status code {status}")
 
                 await ctx.respond(
                     embed=embed,
@@ -405,8 +428,14 @@ class AIText(lightbulb.SlashCommand, name="text", description="Generate text wit
                 )
         except Exception as exc:
             logger.error(f"Error in AIText command: {exc}")
+            embed = hikari.Embed(
+                title="Error",
+                description=f"An internal error occurred:\n```py\n{str(exc)}\n```",
+                color=hikari.Color.from_hex_code("#ed4245"),
+            )
+
             await ctx.respond(
-                f"An unexpected error occurred: {str(exc)}",
+                embed=embed,
                 flags=hikari.MessageFlag.EPHEMERAL,
             )
 
@@ -416,7 +445,9 @@ class AITextWithImage(
     lightbulb.SlashCommand, name="with_image", description="Generate text with an image"
 ):
     request: str = lightbulb.string("request", "The request to send to the AI.")
-    image: hikari.Attachment = lightbulb.attachment("image", "The image to send to the AI.")
+    image: hikari.Attachment = lightbulb.attachment(
+        "image", "The image to send to the AI."
+    )
     model: Optional[str] = lightbulb.string(
         "model",
         "The model to use.",
@@ -431,7 +462,9 @@ class AITextWithImage(
     )
 
     @lightbulb.invoke
-    async def callback(self, ctx: lightbulb.Context) -> Optional[hikari.Message | hikari.Snowflake]:
+    async def callback(
+        self, ctx: lightbulb.Context
+    ) -> Optional[hikari.Message | hikari.Snowflake]:
         await ctx.defer(ephemeral=False)
 
         # Verify image format
@@ -441,7 +474,7 @@ class AITextWithImage(
             embed = hikari.Embed(
                 title="Error",
                 description="Please upload a valid image file.",
-                color=hikari.Color.from_hex_code("#ed4245")
+                color=hikari.Color.from_hex_code("#ed4245"),
             )
             return await ctx.respond(
                 embed=embed,
@@ -455,7 +488,11 @@ class AITextWithImage(
             image_data = io.BytesIO(await self.image.read())
 
             response, status = await generate_text(
-                self.request, self.model, resolved_prompt, ctx.interaction.user.id, image_data
+                self.request,
+                self.model,
+                resolved_prompt,
+                ctx.interaction.user.id,
+                image_data,
             )
 
             if status == 200:
@@ -463,7 +500,9 @@ class AITextWithImage(
                 if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
                     chunks = []
                     while response:
-                        split_idx = response.rfind("\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH)
+                        split_idx = response.rfind(
+                            "\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH
+                        )
 
                         if split_idx in [-1, 0]:
                             split_idx = MAX_DISCORD_MESSAGE_LENGTH
@@ -479,10 +518,9 @@ class AITextWithImage(
             else:
                 embed = hikari.Embed(
                     title="Error",
-                    description=f"An error occurred:\n```py\n{str(response)}\n```",
+                    description=f"A response failed to generate:\n```py\n{str(response)}\n```",
                     color=hikari.Color.from_hex_code("#ed4245"),
                 )
-                embed.set_footer(f"Status code {status}")
 
                 await ctx.respond(
                     embed=embed,
@@ -492,8 +530,8 @@ class AITextWithImage(
             logger.error(f"Error in AITextWithImage command: {exc}")
             embed = hikari.Embed(
                 title="Error",
-                description="An error occurred:\n```py\n{str(exc)}\n```",
-                color=hikari.Color.from_hex_code("#ed4245")
+                description="An internal error occurred:\n```py\n{str(exc)}\n```",
+                color=hikari.Color.from_hex_code("#ed4245"),
             )
             await ctx.respond(
                 embed=embed,
@@ -542,7 +580,9 @@ class AIImage(
 
 @ai_group.register()
 class AIClear(
-    lightbulb.SlashCommand, name="clear", description="Clear your chat history with the bot"
+    lightbulb.SlashCommand,
+    name="clear",
+    description="Clear your chat history with the bot",
 ):
     @lightbulb.invoke
     async def callback(self, ctx: lightbulb.Context) -> None:
@@ -569,13 +609,17 @@ def main():
         "DISCORD_BOT_TOKEN",
         "GEMINI_API_TOKEN",
         "GROQ_API_TOKEN",
-        "IMAGE_GEN_TOKEN"
+        "IMAGE_GEN_TOKEN",
     ]
 
     missing_vars = [var for var in required_env_vars if not os.getenv(var)]
     if missing_vars:
-        logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
-        print(f"Error: Missing required environment variables: {', '.join(missing_vars)}")
+        logger.error(
+            f"Missing required environment variables: {', '.join(missing_vars)}"
+        )
+        print(
+            f"Error: Missing required environment variables: {', '.join(missing_vars)}"
+        )
         return
 
     # Start the bot
