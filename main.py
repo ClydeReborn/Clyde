@@ -3,7 +3,7 @@ import io
 import base64
 import difflib
 import logging
-import asyncio
+import datetime
 import contextlib
 from typing import Optional, Tuple, Dict, List
 
@@ -88,7 +88,7 @@ PROMPT_PRESETS = {
 # Initialize bot
 bot = hikari.GatewayBot(
     token=os.getenv("DISCORD_BOT_TOKEN"),
-    intents=hikari.Intents.GUILD_MESSAGES | hikari.Intents.MESSAGE_CONTENT,
+    intents=hikari.Intents.ALL_UNPRIVILEGED,
 )
 inter_client = miru.Client(bot)
 client = lightbulb.client_from_app(bot)
@@ -308,8 +308,36 @@ bot.subscribe(hikari.StartingEvent, on_starting)
 
 async def on_started(_: hikari.StartedEvent) -> None:
     """Handle bot started event"""
-    logger.info("Bot is now running")
+    logger.info("Searching for inactive servers")
+    all_servers = await client.rest.fetch_my_guilds()
+    inactive_servers = []
 
+    for server in all_servers:
+        sid = server.id
+        server_channels = await client.rest.fetch_guild_channels(sid)
+        text_channels = [ch for ch in server_channels if isinstance(ch, hikari.GuildTextChannel)]
+        all_channels_inactive = True
+        for channel in text_channels:
+            try:
+                recent_messages = await client.rest.fetch_messages(channel.id).limit(1)
+                if recent_messages:
+                    message_date = recent_messages[0].created_at
+                    if message_date < datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=90):
+                        all_channels_inactive = False
+                        break
+                else:
+                    logging.warning(f"No messages found in channel {channel.id}")
+                    continue
+            except hikari.NotFoundError:
+                logger.warning(f"Channel {channel.id} not found or inaccessible.")
+            except Exception as exc:
+                logger.exception(f"Error checking channel {channel.id} in server {sid}: {exc}")
+
+        if all_channels_inactive:
+            inactive_servers.append(str(sid))
+            logger.info(f"Inactive server: {server.name} ({sid})\nCheck if you want the bot to leave this server.")
+
+    logger.info("Bot is now running")
 
 bot.subscribe(hikari.StartedEvent, on_started)
 
@@ -510,7 +538,7 @@ class AITextWithImage(
                         chunk = response[:split_idx].rstrip()
                         response = response[split_idx:].lstrip()
                         chunks.append(chunk)
-                    view = AIView(chunks)
+                    view = AIView(chunks, interaction=ctx.interaction)
                     await ctx.respond(chunks[0], components=view)
                     inter_client.start_view(view)
                 else:
