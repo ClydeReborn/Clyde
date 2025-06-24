@@ -37,20 +37,17 @@ DEFAULT_PROMPT = "You are a helpful assistant."
 MODELS = {
     "gemini": [
         # Gemini 2.5 series
-        "gemini-2.5-pro-preview-03-25",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",  # Supersedes Gemini 2.0 Flash Thinking
         # Gemini 2.0 series
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
-        "gemini-2.0-flash-thinking-exp-01-21",
         # Gemini 1.5 series
-        "gemini-1.5-pro",
         "gemini-1.5-flash",
         "gemini-1.5-flash-8b",
     ],
     "gemma": [
-        # Gemma 2 series
-        "gemma-2-2b-it",
-        "gemma-2-27b-it",
+        # Gemma 2 models have been decomissioned.
         # Gemma 3 series
         "gemma-3-1b-it",
         "gemma-3-4b-it",
