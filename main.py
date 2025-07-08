@@ -204,7 +204,7 @@ class AIService:
             return result, 200
         except Exception as exc:
             logger.error(f"Gemini generation error: {exc}")
-            return str(e), 500
+            return str(exc), 500
 
     @staticmethod
     async def generate_text_with_groq(
@@ -230,7 +230,7 @@ class AIService:
             return result, 200
         except Exception as exc:
             logger.error(f"Groq generation error: {exc}")
-            return str(e), 500
+            return str(exc), 500
 
     @staticmethod
     async def generate_image(prompt: str) -> Tuple[Optional[io.BytesIO | str], int]:
@@ -268,7 +268,7 @@ class AIService:
             return f"HTTP error: {exc.response.status_code}", exc.response.status_code
         except Exception as exc:
             logger.error(f"Image generation error: {exc}")
-            return str(e), 500
+            return str(exc), 500
 
 
 async def generate_text(
