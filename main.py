@@ -1,10 +1,9 @@
 import os
 import io
-import base64
 import difflib
 import logging
-import datetime
 import contextlib
+import platform
 from typing import Optional, Tuple, Dict, List
 
 import hikari
@@ -303,15 +302,25 @@ async def on_starting(_: hikari.StartingEvent) -> None:
 bot.subscribe(hikari.StartingEvent, on_starting)
 
 
-async def on_started(ev: hikari.StartedEvent) -> None:
+async def on_started(_: hikari.StartedEvent) -> None:
     """Handle bot started event"""
     all_servers = await client.rest.fetch_my_guilds()
-    logger.info(f"Lunal is now serving {len(all_servers)} servers")
+    all_shards = bot.shard_count
+    await bot.update_presence(
+        status=hikari.Status.IDLE,
+        activity=hikari.Activity(
+            type=hikari.ActivityType.LISTENING, name="user requests - / for commands"
+        ),
+    )
+    logger.info(
+        f"Lunal is now serving {len(all_servers)} servers on {all_shards} shard{'s' if all_shards > 1 else ''}"
+    )
 
 
 async def on_shard_started(ev: hikari.ShardReadyEvent) -> None:
     """Handle shard started event"""
     logger.info(f"Shard {ev.shard}/{ev.shard.shard_count} is now ready")
+
 
 bot.subscribe(hikari.StartedEvent, on_started)
 
@@ -343,7 +352,7 @@ async def model_autocomplete(ctx: lightbulb.AutocompleteContext) -> None:
     for category, models in MODELS.items():
         suggestions.extend(models[:3])  # Take first 3 from each category
 
-    await ctx.respond(suggestions[:25])
+    return await ctx.respond(suggestions[:25])
 
 
 async def prompt_preset_autocomplete(ctx: lightbulb.AutocompleteContext) -> None:
@@ -365,7 +374,7 @@ async def prompt_preset_autocomplete(ctx: lightbulb.AutocompleteContext) -> None
         return await ctx.respond(fuzzy_matches)
 
     # Default is all presets
-    await ctx.respond(list(PROMPT_PRESETS.keys()))
+    return await ctx.respond(list(PROMPT_PRESETS.keys()))
 
 
 # Command handlers
@@ -600,6 +609,69 @@ class AIClear(
                 "You don't have any chat history to clear.",
                 flags=hikari.MessageFlag.EPHEMERAL,
             )
+
+
+@client.register()
+class Info(
+    lightbulb.SlashCommand, name="info", description="Display information about the bot"
+):
+    @lightbulb.invoke
+    async def callback(self, ctx: lightbulb.Context) -> None:
+        models_length = sum(len(models) for models in MODELS.values())
+
+        ie = hikari.Embed(
+            title=f"About {bot.get_me().display_name}",
+            description=f"Serving {len(list(bot.cache.get_guilds_view().values()))} servers with AI for free",
+            color=hikari.Color.from_hex_code("#5865F2"),
+        )
+
+        ie.add_field(name="Python Version", value=platform.python_version())
+        ie.add_field(name="Hikari Version", value=hikari.__version__)
+        ie.add_field(name="Models Available", value=str(models_length))
+
+        await ctx.respond(embed=ie)
+
+
+@client.register()
+class Ping(
+    lightbulb.SlashCommand,
+    name="ping",
+    description="Ping the bot",
+):
+    @lightbulb.invoke
+    async def callback(self, ctx: lightbulb.Context) -> None:
+        latency = round(bot.heartbeat_latency * 1000)
+        pe = hikari.Embed(
+            description=f"**{latency}**ms", color=hikari.Color.from_hex_code("#5865F2")
+        )
+        await ctx.respond(embed=pe)
+
+
+@client.register()
+class Invite(
+    lightbulb.SlashCommand,
+    name="invite",
+    description="Invite the bot to your server",
+):
+    @lightbulb.invoke
+    async def callback(self, ctx: lightbulb.Context) -> None:
+        button_view = miru.View()
+        button_view.add_item(
+            miru.LinkButton(
+                label="Invite",
+                url="https://discord.com/api/oauth2/authorize?client_id=900004137742262332&scopes=bot+applications.commands",
+            )
+        )
+
+        ie = hikari.Embed(
+            description="Add me to your server by pressing the button below.",
+            color=hikari.Color.from_hex_code("#5865f2"),
+        )
+
+        await ctx.respond(
+            embed=ie,
+            components=button_view.build(),
+        )
 
 
 # Register commands and run bot
