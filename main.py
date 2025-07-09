@@ -204,7 +204,7 @@ class AIService:
             return result, 200
         except Exception as exc:
             logger.error(f"Gemini generation error: {exc}")
-            return str(e), 500
+            return str(exc), 500
 
     @staticmethod
     async def generate_text_with_groq(
@@ -230,7 +230,7 @@ class AIService:
             return result, 200
         except Exception as exc:
             logger.error(f"Groq generation error: {exc}")
-            return str(e), 500
+            return str(exc), 500
 
     @staticmethod
     async def generate_image(prompt: str) -> Tuple[Optional[io.BytesIO | str], int]:
@@ -255,8 +255,8 @@ class AIService:
                 if "data" not in data or not data["data"]:
                     return "Empty response from image service", 500
 
-                image_b64 = data["data"][0]["b64_json"]
-                image = io.BytesIO(base64.b64decode(image_b64))
+                image_data = await img_client.get(data["data"][0]["url"])
+                image = io.BytesIO(image_data.content)
                 image.seek(0)
 
                 return image, 200
@@ -268,7 +268,7 @@ class AIService:
             return f"HTTP error: {exc.response.status_code}", exc.response.status_code
         except Exception as exc:
             logger.error(f"Image generation error: {exc}")
-            return str(e), 500
+            return str(exc), 500
 
 
 async def generate_text(
@@ -297,44 +297,21 @@ async def generate_text(
 async def on_starting(_: hikari.StartingEvent) -> None:
     """Handle bot startup event"""
     await client.start()
-    logger.info("Bot is starting")
+    logger.info("Shard initialization in progress")
 
 
 bot.subscribe(hikari.StartingEvent, on_starting)
 
 
-async def on_started(_: hikari.StartedEvent) -> None:
+async def on_started(ev: hikari.StartedEvent) -> None:
     """Handle bot started event"""
-    logger.info("Searching for inactive servers")
     all_servers = await client.rest.fetch_my_guilds()
-    inactive_servers = []
+    logger.info(f"Lunal is now serving {len(all_servers)} servers")
 
-    for server in all_servers:
-        sid = server.id
-        server_channels = await client.rest.fetch_guild_channels(sid)
-        text_channels = [ch for ch in server_channels if isinstance(ch, hikari.GuildTextChannel)]
-        all_channels_inactive = True
-        for channel in text_channels:
-            try:
-                recent_messages = await client.rest.fetch_messages(channel.id).limit(1)
-                if recent_messages:
-                    message_date = recent_messages[0].created_at
-                    if message_date < datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=90):
-                        all_channels_inactive = False
-                        break
-                else:
-                    logging.warning(f"No messages found in channel {channel.id}")
-                    continue
-            except hikari.NotFoundError:
-                logger.warning(f"Channel {channel.id} not found or inaccessible.")
-            except Exception as exc:
-                logger.exception(f"Error checking channel {channel.id} in server {sid}: {exc}")
 
-        if all_channels_inactive:
-            inactive_servers.append(str(sid))
-            logger.info(f"Inactive server: {server.name} ({sid})\nCheck if you want the bot to leave this server.")
-
-    logger.info("Bot is now running")
+async def on_shard_started(ev: hikari.ShardReadyEvent) -> None:
+    """Handle shard started event"""
+    logger.info(f"Shard {ev.shard}/{ev.shard.shard_count} is now ready")
 
 bot.subscribe(hikari.StartedEvent, on_started)
 
