@@ -9,7 +9,7 @@ This bot can be named however you like, we don't recommend using `Clyde`, as Dis
 Clyde uses Python for the AI magic we do on it.
 
 #### AI Models
-Clyde uses a selection of over 20 models from Google, Meta, Mistral, DeepSeek and many more, you can pick any one you like.
+Clyde uses a selection of a lot of models from Google, Meta, Mistral, DeepSeek and many more, you can pick any one you like.
 
 #### Image Generation
 Clyde can now generate images using the Google's Gemini Native Image Generation, provided by [Image Router](https://ir.myqa.cc). Provide it an instruction, and it'll try its best to follow.
