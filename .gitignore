@@ -7,4 +7,5 @@ clyde.py
 
 # parts of the api
 gemini.cookie
+memberdata.db
 api.py

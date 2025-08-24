@@ -1,5 +1,7 @@
 import os
 import io
+import datetime
+import asyncio
 import difflib
 import logging
 import contextlib
@@ -10,6 +12,8 @@ import hikari
 import lightbulb
 import miru
 import httpx
+import aiosqlite
+import aiocron
 from google import genai
 from google.genai import types
 from groq import AsyncGroq
@@ -21,7 +25,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-logger = logging.getLogger("ai_discord_bot")
+logger = logging.getLogger("lunalai")
+data_logger = logging.getLogger("lunalai.stats")
 
 # Load environment variables
 load_dotenv()
@@ -86,6 +91,7 @@ bot = hikari.GatewayBot(
     token=os.getenv("DISCORD_BOT_TOKEN"),
     intents=hikari.Intents.ALL_UNPRIVILEGED,
 )
+db_file = os.getenv("MEMBERDATA_DB")
 inter_client = miru.Client(bot)
 client = lightbulb.client_from_app(bot)
 ai_group = lightbulb.Group("ai", "AI command group")
@@ -100,6 +106,36 @@ except Exception as e:
 
 # Store user chat histories
 chat_histories: Dict[int, List[str]] = {}
+
+
+async def init_db():
+    if not os.path.exists(db_file):
+        async with aiosqlite.connect(db_file) as db:
+            await db.execute("""
+            CREATE TABLE IF NOT EXISTS stats (
+                date TEXT PRIMARY KEY,
+                guild_count INTEGER,
+                member_count INTEGER
+            )
+            """)
+            await db.commit()
+        data_logger.info("[STATS] data DB created")
+
+
+async def record_stats():
+    guild_count = len(bot.cache.get_guilds_view())
+    member_count = sum(
+        g.member_count for g in bot.cache.get_guilds_view().values() if g.member_count
+    )
+
+    today = datetime.date.today().isoformat()
+    async with aiosqlite.connect(db_file) as db:
+        await db.execute(
+            "REPLACE INTO stats (date, guild_count, member_count) VALUES (?, ?, ?)",
+            (today, guild_count, member_count),
+        )
+        await db.commit()
+    data_logger.info(f"[STATS] {today}: {guild_count} guilds, {member_count} members")
 
 
 class AIView(miru.View):
@@ -239,7 +275,7 @@ class AIService:
                 response = await img_client.post(
                     "https://ir-api.myqa.cc/v1/openai/images/generations",
                     json={
-                        "model": "google/gemini-2.0-flash-exp:free",
+                        "model": "HiDream-ai/HiDream-I1-Full:free",
                         "prompt": prompt,
                     },
                     headers={
@@ -312,6 +348,8 @@ async def on_started(_: hikari.StartedEvent) -> None:
             type=hikari.ActivityType.LISTENING, name="user requests - / for commands"
         ),
     )
+    await init_db()
+    aiocron.crontab("0 0 * * *", func=record_stats, loop=asyncio.get_running_loop())
     logger.info(
         f"Lunal is now serving {len(all_servers)} servers on {all_shards} shard{'s' if all_shards > 1 else ''}"
     )

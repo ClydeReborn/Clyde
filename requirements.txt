@@ -10,3 +10,6 @@ google-generativeai
 python-dotenv
 
 pillow
+
+aiocron
+aiosqlite
