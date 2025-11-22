@@ -6,7 +6,11 @@ import difflib
 import logging
 import contextlib
 import platform
-from typing import Optional, Tuple, Dict, List
+import time
+import traceback
+import uuid
+from functools import wraps
+from typing import Optional, Dict, List
 
 import hikari
 import lightbulb
@@ -17,6 +21,7 @@ import aiocron
 from google import genai
 from google.genai import types
 from groq import AsyncGroq
+from groq.types.chat import ChatCompletionSystemMessageParam
 from dotenv import load_dotenv
 from PIL import Image, UnidentifiedImageError
 
@@ -34,45 +39,46 @@ load_dotenv()
 # Constants
 MAX_DISCORD_MESSAGE_LENGTH = 2000
 MAX_CHAT_HISTORY = 30
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-2.5-flash"
 DEFAULT_PROMPT = "You are a helpful assistant."
 
 # Model lists for autocomplete
 MODELS = {
     "gemini": [
         # Gemini 2.5 series
-        "gemini-2.5-pro",
-        "gemini-2.5-flash",  # Supersedes Gemini 2.0 Flash Thinking
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
         # Gemini 2.0 series
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
-        # Gemini 1.5 series
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-8b",
     ],
     "gemma": [
-        # Gemma 2 models have been decomissioned.
+        # Gemma 2 models have been decommissioned.
         # Gemma 3 series
         "gemma-3-1b-it",
         "gemma-3-4b-it",
         "gemma-3-12b-it",
         "gemma-3-27b-it",
+        "gemma-3n-e2b-it",
+        "gemma-3n-e4b-it"
     ],
     "other": [
         # Qwen models
-        "qwen-qwq-32b",
-        # DeepSeek models
-        "deepseek-r1-distill-llama-70b",
+        "qwen/qwen3-32b",
         # Llama 3.x series
         "llama-3.1-8b-instant",
         "llama-3.3-70b-versatile",
-        "llama3-70b-8192",
-        "llama3-8b-8192",
         # Llama 4 series
         "meta-llama/llama-4-maverick-17b-128e-instruct",
         "meta-llama/llama-4-scout-7b-16e-instruct",
-        # Mistral models
-        "mistral-saba-24b",
+        # Moonshot AI models
+        "moonshotai/kimi-k2-instruct-0905",
+        # OpenAI open source models
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        # Groq in-house models
+        "groq/compound",
+        "groq/compound-mini"
     ],
 }
 
@@ -121,9 +127,32 @@ async def init_db():
             await db.commit()
         data_logger.info("[STATS] data DB created")
 
+@client.error_handler
+async def on_command_error(exc: lightbulb.exceptions.ExecutionPipelineFailedException) -> bool:
+    ctx = exc.context
+    errid = uuid.uuid4()
+    em = hikari.Embed(
+        title="<:error:1368156499167150171> Error",
+        description=f"We were unable to generate your response.\n"
+        f"Please report this in the support server with the following code: {errid}",
+        color=hikari.Color.from_hex_code("#ed4245"),
+    )
+    logging.error(f"Error ID: {errid}")
+    logging.error("".join(traceback.format_exception(exc.__cause__)))
+    button_view = miru.View()
+    button_view.add_item(
+        miru.LinkButton(
+            label="Support Server",
+            url="https://discord.gg/E9UwEAPgU6"
+        )
+    )
+
+    await ctx.respond(em, flags=64, components=button_view.build())
+    return True
 
 async def record_stats():
-    guild_count = len(bot.cache.get_guilds_view())
+    application = await bot.rest.fetch_application()
+    guild_count = application.approximate_guild_count
     member_count = sum(
         g.member_count for g in bot.cache.get_guilds_view().values() if g.member_count
     )
@@ -153,13 +182,13 @@ class AIView(miru.View):
         self.previous_page.disabled = True
         self.next_page.disabled = len(entries) <= 1
 
-    @miru.button(emoji="◀️", style=hikari.ButtonStyle.SECONDARY)
+    @miru.button(emoji="<:left:1368155093337243748>", style=hikari.ButtonStyle.SECONDARY)
     async def previous_page(self, ctx: miru.ViewContext, button: miru.Button) -> None:
         self.index -= 1
         self._update_buttons()
         await ctx.edit_response(self.entries[self.index], components=self.build())
 
-    @miru.button(label="▶️", style=hikari.ButtonStyle.SECONDARY)
+    @miru.button(emoji="<:right:1368155064925163550>", style=hikari.ButtonStyle.SECONDARY)
     async def next_page(self, ctx: miru.ViewContext, button: miru.Button) -> None:
         self.index += 1
         self._update_buttons()
@@ -182,129 +211,151 @@ class AIView(miru.View):
         with contextlib.suppress(hikari.ForbiddenError):
             await self._interaction.edit_initial_response(components=self.build())
 
+def exponential(retry_cnt: int, retry_min: int, retry_max: int):
+    """Exponentially back off on failure."""
+    def decorator(func):
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                got_exc = None
+                for attempt in range(retry_cnt):
+                    try:
+                        return await func(*args, **kwargs)
+                    except Exception as exc:
+                        got_exc = exc
+                        await asyncio.sleep(min(retry_min * (2 ** attempt), retry_max))
+                raise got_exc
+            return async_wrapper
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            got_exc = None
+            for attempt in range(retry_cnt):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as exc:
+                    got_exc = exc
+                    time.sleep(min(retry_min * (2 ** attempt), retry_max))
+            raise got_exc
+        return sync_wrapper
+    return decorator
 
 class AIService:
     """Service for handling AI-related operations"""
 
     @staticmethod
-    def format_chat_history(messages: List[str]) -> str:
+    def format_chat_history(messages: List[str]) -> list[dict]:
         """Format chat history for AI consumption"""
-        formatted = ""
+        formatted = []
         for i, message in enumerate(messages[:MAX_CHAT_HISTORY], start=1):
-            role = "User" if i % 2 == 0 else "Assistant"
-            formatted += f"{role}: {message}\n"
+            if i % 2 == 0:
+                formatted.append({"role": "user", "content": message})
+            else:
+                formatted.append({"role": "assistant", "content": message})
         return formatted
 
     @staticmethod
+    @exponential(3, 5, 30)
     async def generate_text_with_gemini(
         request: str,
         model: str,
         system_prompt: str,
         user_id: int,
         image: Optional[io.BytesIO] = None,
-    ) -> Tuple[str, int]:
-        """Generate text using Gemini models"""
-        try:
-            config = types.GenerateContentConfig(system_instruction=system_prompt)
+    ) -> Optional[str]:
+        """Generate text using Gemini models with native chat history"""
+        # Initialize user chat history if missing
+        chat_histories.setdefault(user_id, [])
 
-            if image:
-                payload = [
-                    request,
-                    types.Part.from_bytes(
-                        data=image.read(),
-                        mime_type="image/png",
-                    ),
-                ]
-            else:
-                chat_histories.setdefault(user_id, []).append(request)
-                formatted_history = AIService.format_chat_history(
-                    chat_histories[user_id]
-                )
-                payload = [formatted_history]
+        # System instruction (not stored in history; just config)
+        config = types.GenerateContentConfig(system_instruction=system_prompt)
 
-            # Choose the correct API based on model
-            if "gemma" in model.lower():
-                response = gemini_client.models.generate_content(
-                    model=model, contents=payload
-                )
-            else:
-                response = gemini_client.models.generate_content(
-                    model=model, config=config, contents=payload
-                )
+        # Build structured chat history for Gemini
+        history = []
+        for i, msg in enumerate(chat_histories[user_id]):
+            role = "user" if i % 2 == 0 else "model"
+            history.append(
+                types.Content(role=role, parts=[types.Part.from_text(text=msg)])
+            )
 
-            # Sometimes the roles are shown to the user, but they are supposed to be an internal guideline on how the AI chat is going on
-            result = response.text.replace("Assistant: ", "").replace("User: ", "")
+        # Add current user request
+        if image:
+            parts = [
+                types.Part.from_text(text=request),
+                types.Part.from_bytes(data=image.read(), mime_type="image/png"),
+            ]
+        else:
+            parts = [types.Part.from_text(text=request)]
 
-            chat_histories[user_id].append(result)
-            return result, 200
-        except Exception as exc:
-            logger.error(f"Gemini generation error: {exc}")
-            return str(exc), 500
+        history.append(types.Content(role="user", parts=parts))
+
+        # Choose API call depending on model
+        if "gemma" in model.lower():
+            response = gemini_client.models.generate_content(
+                model=model, contents=history
+            )
+        else:
+            response = gemini_client.models.generate_content(
+                model=model, config=config, contents=history
+            )
+
+        result = response.text
+
+        # Store assistant reply in history
+        chat_histories[user_id].append(request)  # user input
+        chat_histories[user_id].append(result)   # assistant output
+
+        return result
 
     @staticmethod
+    @exponential(3, 5, 30)
     async def generate_text_with_groq(
         request: str, model: str, system_prompt: str, user_id: int
-    ) -> Tuple[str, int]:
+    ) -> Optional[str]:
         """Generate text using Groq models"""
-        try:
-            chat_histories.setdefault(user_id, []).append(request)
-            formatted_history = AIService.format_chat_history(chat_histories[user_id])
+        chat_histories.setdefault(user_id, []).append(request)
+        formatted_history = AIService.format_chat_history(chat_histories[user_id])
 
-            response = await groq_client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": formatted_history},
-                ],
-            )
+        response = await groq_client.chat.completions.create(
+            model=model,
+            messages=[
+                ChatCompletionSystemMessageParam(role="system", content="system_prompt"),
+                *formatted_history,
+            ],
+        )
 
-            result = response.choices[0].message.content
-            result = result.replace("Assistant: ", "")
+        result = response.choices[0].message.content
 
-            chat_histories[user_id].append(result)
-            return result, 200
-        except Exception as exc:
-            logger.error(f"Groq generation error: {exc}")
-            return str(exc), 500
+        chat_histories[user_id].append(result)
+        return result
 
     @staticmethod
-    async def generate_image(prompt: str) -> Tuple[Optional[io.BytesIO | str], int]:
+    async def generate_image(prompt: str) -> Optional[io.BytesIO | str]:
         """Generate an image from text prompt"""
-        try:
-            async with httpx.AsyncClient(timeout=60.0) as img_client:
-                response = await img_client.post(
-                    "https://ir-api.myqa.cc/v1/openai/images/generations",
-                    json={
-                        "model": "HiDream-ai/HiDream-I1-Full:free",
-                        "prompt": prompt,
-                    },
-                    headers={
-                        "Authorization": f"Bearer {os.getenv('IMAGE_GEN_TOKEN')}",
-                        "Content-Type": "application/json",
-                    },
-                )
-
-                response.raise_for_status()
-                data = response.json()
-
-                if "data" not in data or not data["data"]:
-                    return "Empty response from image service", 500
-
-                image_data = await img_client.get(data["data"][0]["url"])
-                image = io.BytesIO(image_data.content)
-                image.seek(0)
-
-                return image, 200
-
-        except httpx.HTTPStatusError as exc:
-            logger.error(
-                f"HTTP error during image generation: {exc.response.status_code} - {exc.response.text}"
+        async with httpx.AsyncClient(timeout=60.0) as img_client:
+            response = await img_client.post(
+                "https://ir-api.myqa.cc/v1/openai/images/generations",
+                json={
+                    "model": "HiDream-ai/HiDream-I1-Full:free",
+                    "prompt": prompt,
+                },
+                headers={
+                    "Authorization": f"Bearer {os.getenv('IMAGE_GEN_TOKEN')}",
+                    "Content-Type": "application/json",
+                },
             )
-            return f"HTTP error: {exc.response.status_code}", exc.response.status_code
-        except Exception as exc:
-            logger.error(f"Image generation error: {exc}")
-            return str(exc), 500
 
+            response.raise_for_status()
+            data = response.json()
+
+            if "data" not in data or not data["data"]:
+                raise RuntimeError("Empty response from image service")
+
+            image_data = await img_client.get(data["data"][0]["url"])
+            image = io.BytesIO(image_data.content)
+            image.seek(0)
+
+            return image
 
 async def generate_text(
     request: str,
@@ -312,7 +363,7 @@ async def generate_text(
     prompt: str,
     user_id: int,
     image: Optional[io.BytesIO] = None,
-) -> Tuple[str, int]:
+) -> Optional[str]:
     """Unified text generation function that routes to appropriate service"""
     try:
         # Route to appropriate service based on model name
@@ -321,11 +372,11 @@ async def generate_text(
                 request, model, prompt, user_id, image
             )
         if image:
-            return "Image processing not supported for non-Gemini models", 400
+            raise ValueError("Image processing not supported for non-Gemini models")
         return await AIService.generate_text_with_groq(request, model, prompt, user_id)
     except Exception as exc:
         logger.error(f"Text generation error: {exc}")
-        return f"An unexpected error occurred: {str(exc)}", 500
+        raise RuntimeError(f"An unexpected error occurred: {str(exc)}")
 
 
 # Event handlers
@@ -340,7 +391,9 @@ bot.subscribe(hikari.StartingEvent, on_starting)
 
 async def on_started(_: hikari.StartedEvent) -> None:
     """Handle bot started event"""
-    all_servers = await client.rest.fetch_my_guilds()
+    application = await bot.rest.fetch_application()                           
+    all_servers = application.approximate_guild_count
+    all_users = application.approximate_user_install_count
     all_shards = bot.shard_count
     await bot.update_presence(
         status=hikari.Status.IDLE,
@@ -351,7 +404,7 @@ async def on_started(_: hikari.StartedEvent) -> None:
     await init_db()
     aiocron.crontab("0 0 * * *", func=record_stats, loop=asyncio.get_running_loop())
     logger.info(
-        f"Lunal is now serving {len(all_servers)} servers on {all_shards} shard{'s' if all_shards > 1 else ''}"
+        f"Lunal is now serving {all_servers} servers and {all_users} users on {all_shards} shard{'s' if all_shards > 1 else ''}"
     )
 
 
@@ -439,54 +492,29 @@ class AIText(lightbulb.SlashCommand, name="text", description="Generate text wit
         # Resolve prompt preset if needed
         resolved_prompt = PROMPT_PRESETS.get(self.prompt, self.prompt)
 
-        try:
-            response, status = await generate_text(
-                self.request, self.model, resolved_prompt, ctx.interaction.user.id
-            )
+        response = await generate_text(
+            self.request, self.model, resolved_prompt, ctx.interaction.user.id
+        )
 
-            if status == 200:
-                # Handle long responses
-                if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
-                    chunks = []
-                    while response:
-                        split_idx = response.rfind(
-                            "\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH
-                        )
-
-                        if split_idx in [-1, 0]:
-                            split_idx = MAX_DISCORD_MESSAGE_LENGTH
-
-                        chunk = response[:split_idx].rstrip()
-                        response = response[split_idx:].lstrip()
-                        chunks.append(chunk)
-                    view = AIView(chunks, ctx.interaction)
-                    await ctx.respond(chunks[0], components=view)
-                    inter_client.start_view(view)
-                else:
-                    await ctx.respond(response)
-            else:
-                embed = hikari.Embed(
-                    title="Error",
-                    description=f"A response failed to generate:\n```py\n{str(response)}\n```",
-                    color=hikari.Color.from_hex_code("#ed4245"),
+        # Handle long responses
+        if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
+            chunks = []
+            while response:
+                split_idx = response.rfind(
+                    "\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH
                 )
 
-                await ctx.respond(
-                    embed=embed,
-                    flags=hikari.MessageFlag.EPHEMERAL,
-                )
-        except Exception as exc:
-            logger.error(f"Error in AIText command: {exc}")
-            embed = hikari.Embed(
-                title="Error",
-                description=f"An internal error occurred:\n```py\n{str(exc)}\n```",
-                color=hikari.Color.from_hex_code("#ed4245"),
-            )
+                if split_idx in [-1, 0]:
+                    split_idx = MAX_DISCORD_MESSAGE_LENGTH
 
-            await ctx.respond(
-                embed=embed,
-                flags=hikari.MessageFlag.EPHEMERAL,
-            )
+                chunk = response[:split_idx].rstrip()
+                response = response[split_idx:].lstrip()
+                chunks.append(chunk)
+            view = AIView(chunks, ctx.interaction)
+            await ctx.respond(chunks[0], components=view)
+            inter_client.start_view(view)
+        else:
+            await ctx.respond(response)
 
 
 @ai_group.register()
@@ -521,7 +549,7 @@ class AITextWithImage(
             Image.open(io.BytesIO(await self.image.read()))
         except (UnidentifiedImageError, IOError):
             embed = hikari.Embed(
-                title="Error",
+                title="<:error:1368156499167150171> Error",
                 description="Please upload a valid image file.",
                 color=hikari.Color.from_hex_code("#ed4245"),
             )
@@ -533,59 +561,35 @@ class AITextWithImage(
         # Resolve prompt preset if needed
         resolved_prompt = PROMPT_PRESETS.get(self.prompt, self.prompt)
 
-        try:
-            image_data = io.BytesIO(await self.image.read())
+        image_data = io.BytesIO(await self.image.read())
 
-            response, status = await generate_text(
-                self.request,
-                self.model,
-                resolved_prompt,
-                ctx.interaction.user.id,
-                image_data,
-            )
+        response  = await generate_text(
+            self.request,
+            self.model,
+            resolved_prompt,
+            ctx.interaction.user.id,
+            image_data,
+        )
 
-            if status == 200:
-                # Handle long responses
-                if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
-                    chunks = []
-                    while response:
-                        split_idx = response.rfind(
-                            "\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH
-                        )
-
-                        if split_idx in [-1, 0]:
-                            split_idx = MAX_DISCORD_MESSAGE_LENGTH
-
-                        chunk = response[:split_idx].rstrip()
-                        response = response[split_idx:].lstrip()
-                        chunks.append(chunk)
-                    view = AIView(chunks, interaction=ctx.interaction)
-                    await ctx.respond(chunks[0], components=view)
-                    inter_client.start_view(view)
-                else:
-                    await ctx.respond(response)
-            else:
-                embed = hikari.Embed(
-                    title="Error",
-                    description=f"A response failed to generate:\n```py\n{str(response)}\n```",
-                    color=hikari.Color.from_hex_code("#ed4245"),
+        # Handle long responses
+        if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
+            chunks = []
+            while response:
+                split_idx = response.rfind(
+                    "\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH
                 )
 
-                await ctx.respond(
-                    embed=embed,
-                    flags=hikari.MessageFlag.EPHEMERAL,
-                )
-        except Exception as exc:
-            logger.error(f"Error in AITextWithImage command: {exc}")
-            embed = hikari.Embed(
-                title="Error",
-                description="An internal error occurred:\n```py\n{str(exc)}\n```",
-                color=hikari.Color.from_hex_code("#ed4245"),
-            )
-            await ctx.respond(
-                embed=embed,
-                flags=hikari.MessageFlag.EPHEMERAL,
-            )
+                if split_idx in [-1, 0]:
+                    split_idx = MAX_DISCORD_MESSAGE_LENGTH
+
+                chunk = response[:split_idx].rstrip()
+                response = response[split_idx:].lstrip()
+                chunks.append(chunk)
+            view = AIView(chunks, interaction=ctx.interaction)
+            await ctx.respond(chunks[0], components=view)
+            return inter_client.start_view(view)
+        else:
+            return await ctx.respond(response)
 
 
 @ai_group.register()
@@ -598,33 +602,8 @@ class AIImage(
     async def callback(self, ctx: lightbulb.Context) -> None:
         await ctx.defer(ephemeral=False)
 
-        try:
-            image, status = await AIService.generate_image(self.prompt)
-
-            if status == 200:
-                await ctx.respond(attachments=[image])
-            else:
-                embed = hikari.Embed(
-                    title="Error",
-                    description=f"An error occurred:\n```py\n{str(image)}\n```",
-                    color=hikari.Color.from_hex_code("#ed4245"),
-                )
-                embed.set_footer(f"Status code {status}")
-
-                await ctx.respond(
-                    embed=embed,
-                    flags=hikari.MessageFlag.EPHEMERAL,
-                )
-        except Exception as exc:
-            embed = hikari.Embed(
-                title="Error",
-                description=f"An unexpected error occurred:\n```py\n{str(exc)}\n```",
-                color=hikari.Color.from_hex_code("#ed4245"),
-            )
-            await ctx.respond(
-                embed=embed,
-                flags=hikari.MessageFlag.EPHEMERAL,
-            )
+        image = await AIService.generate_image(self.prompt)
+        await ctx.respond(attachments=[image])
 
 
 @ai_group.register()
@@ -656,10 +635,14 @@ class Info(
     @lightbulb.invoke
     async def callback(self, ctx: lightbulb.Context) -> None:
         models_length = sum(len(models) for models in MODELS.values())
+        application = await bot.rest.fetch_application()
+        guild_count = application.approximate_guild_count
+        user_count = application.approximate_user_install_count
 
         ie = hikari.Embed(
             title=f"About {bot.get_me().display_name}",
-            description=f"Serving {len(list(bot.cache.get_guilds_view().values()))} servers with AI for free",
+            description=f"Serving {guild_count} servers and"
+                        f" {user_count} users with AI for free",
             color=hikari.Color.from_hex_code("#5865F2"),
         )
 
