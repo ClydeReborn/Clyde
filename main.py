@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import datetime
 import asyncio
 import difflib
@@ -40,7 +41,17 @@ load_dotenv()
 MAX_DISCORD_MESSAGE_LENGTH = 2000
 MAX_CHAT_HISTORY = 30
 DEFAULT_MODEL = "gemini-2.5-flash"
-DEFAULT_PROMPT = "You are a helpful assistant."
+DEFAULT_PROMPT = """
+You are {}, a Discord chatbot.
+
+You are aware of the following:
+- You are currently in the #{} channel.
+- You are currently in the {} server.
+
+If the placeholders haven't been replaced, disregard them.
+
+Your personality reflects your name. Try to make up a personality that matches your name.
+"""
 
 # Model lists for autocomplete
 MODELS = {
@@ -84,12 +95,12 @@ MODELS = {
 
 # Prompt presets
 PROMPT_PRESETS = {
-    "default": "You are a helpful assistant.",
-    "gpt": "You are ChatGPT, a large language model trained by OpenAI.",
-    "casual": "You are a casual assistant.",
-    "discord": "You are a Discord user, respond casually and lowercase only.",
-    "programmer": "You are a programming assistant who provides concise and clean code examples.",
-    "storyteller": "You are a creative storyteller who can craft engaging narratives.",
+    "default": DEFAULT_PROMPT,
+    "gpt": "You are GPT-5.1, a large language model from OpenAI. Refer to yourself as ChatGPT.",
+    "casual": "Respond casually, no need to use overly verbose responses.",
+    "discord": "You are a Discord user, respond lowercase only, no punctuation, and treat yourself like you're on IRC.",
+    "programmer": "You are a programming assistant who will provide suggestions to codes given and attempt to rework when asked.",
+    "storyteller": "You will make creative stories about the given topics, tell the user said story.",
 }
 
 # Initialize bot
@@ -149,6 +160,33 @@ async def on_command_error(exc: lightbulb.exceptions.ExecutionPipelineFailedExce
 
     await ctx.respond(em, flags=64, components=button_view.build())
     return True
+
+@bot.listen(hikari.MessageCreateEvent)
+async def on_message(event):
+    content = event.message.content
+    channel = event.get_channel()
+    reply = event.message.referenced_message
+
+    if isinstance(content, str) and (
+        re.findall(fr'<@(!)?{event.app.cache.get_me().id}>', content) or (
+            reply and reply.author.id == event.app.cache.get_me().id
+        )
+    ) and not event.author.is_bot:
+        async with bot.rest.trigger_typing(channel):
+            cleaned_content = re.sub(fr'<@(!)?{event.app.cache.get_me().id}>', '', content)
+
+            filled_prompt = DEFAULT_PROMPT.format("Lunal", event.get_channel().name, event.get_guild().name)
+
+            message = await AIService.generate_text_with_gemini(
+                cleaned_content, "gemini-2.5-flash", filled_prompt, event.message.author.id, None
+            )
+
+            message += "\n\n-# Mention to continue this conversation."
+
+            if len(message) > MAX_DISCORD_MESSAGE_LENGTH:
+                return await channel.send("The response was too long.\nUse the slash command to see longer responses.")
+
+            await channel.send(message)
 
 async def record_stats():
     application = await bot.rest.fetch_application()
