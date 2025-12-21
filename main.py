@@ -22,7 +22,7 @@ import aiocron
 from google import genai
 from google.genai import types
 from groq import AsyncGroq
-from groq.types.chat import ChatCompletionSystemMessageParam
+from groq.types.chat import ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam
 from dotenv import load_dotenv
 from PIL import Image, UnidentifiedImageError
 
@@ -40,7 +40,7 @@ load_dotenv()
 # Constants
 MAX_DISCORD_MESSAGE_LENGTH = 2000
 MAX_CHAT_HISTORY = 30
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-2.0-flash"
 DEFAULT_PROMPT = """
 You are {}, a Discord chatbot.
 
@@ -108,7 +108,7 @@ bot = hikari.GatewayBot(
     token=os.getenv("DISCORD_BOT_TOKEN"),
     intents=hikari.Intents.ALL_UNPRIVILEGED,
 )
-db_file = os.getenv("MEMBERDATA_DB")
+db_file = os.getenv("STATS_DB")
 inter_client = miru.Client(bot)
 client = lightbulb.client_from_app(bot)
 ai_group = lightbulb.Group("ai", "AI command group")
@@ -178,7 +178,7 @@ async def on_message(event):
             filled_prompt = DEFAULT_PROMPT.format("Lunal", event.get_channel().name, event.get_guild().name)
 
             message = await AIService.generate_text_with_gemini(
-                cleaned_content, "gemini-2.5-flash", filled_prompt, event.message.author.id, None
+                cleaned_content, DEFAULT_MODEL, filled_prompt, event.message.author.id, None
             )
 
             message += "\n\n-# Mention to continue this conversation."
@@ -294,6 +294,54 @@ class AIService:
 
     @staticmethod
     @exponential(3, 5, 30)
+    async def check_llamaguard(text: str) -> tuple[bool, int]:
+        """Validate safety of a request or response"""
+
+        logger.info("Dispatching text to Llama Guard")
+        request = await groq_client.chat.completions.create(
+            model="meta-llama/llama-guard-4-12b",
+            messages=[
+                ChatCompletionUserMessageParam(role="user", content=text)
+            ],
+            temperature=0,
+        )
+
+        raw = request.choices[0].message.content.strip().lower()
+        parts = raw.split()
+
+        tag = parts[0] if parts else "unsafe"
+        code = parts[1].upper() if len(parts) > 1 else None
+
+        severity_map = {
+            "S1": 3,  # violent crimes
+            "S2": 3,  # non-violent crimes
+            "S3": 3,  # sex-related crimes
+            "S4": 3,  # child sexual exploitation
+            "S5": 2,  # defamation
+            "S6": 1,  # specialized advice
+            "S7": 2,  # privacy
+            "S8": 2,  # intellectual property
+            "S9": 3,  # indiscriminate weapons
+            "S10": 3,  # hate speech
+            "S11": 3,  # suicide & self-harm
+            "S12": 2,  # sexual content
+            "S13": 2,  # elections
+            "S14": 2,  # code interpreter abuse
+            None: 0,  # no violation
+        }
+
+        severity = severity_map.get(code, 0)
+        is_safe = (tag == "safe")
+
+        logger.info(f"Verdict: {tag}, {code}")
+
+        if tag == "unsafe" and code is None:
+            return False, 2
+            
+        return is_safe, severity
+
+    @staticmethod
+    @exponential(3, 5, 30)
     async def generate_text_with_gemini(
         request: str,
         model: str,
@@ -302,6 +350,11 @@ class AIService:
         image: Optional[io.BytesIO] = None,
     ) -> Optional[str]:
         """Generate text using Gemini models with native chat history"""
+        # Check safety of input
+        is_safe, severity = await AIService.check_llamaguard(request)
+        if not is_safe and severity >= 2:
+            return "I'm sorry, but I'm unable to assist with that."
+        
         # Initialize user chat history if missing
         chat_histories.setdefault(user_id, [])
 
@@ -339,6 +392,11 @@ class AIService:
 
         result = response.text
 
+        is_safe, severity = await AIService.check_llamaguard(result)
+        if not is_safe and severity >= 2:
+            result = "Sorry, that's beyond my current scope."
+        
+
         # Store assistant reply in history
         chat_histories[user_id].append(request)  # user input
         chat_histories[user_id].append(result)   # assistant output
@@ -351,6 +409,10 @@ class AIService:
         request: str, model: str, system_prompt: str, user_id: int
     ) -> Optional[str]:
         """Generate text using Groq models"""
+        is_safe, severity = await AIService.check_llamaguard(request)
+        if not is_safe and severity >= 2:
+            return "I'm sorry, but I'm unable to assist with that."
+        
         chat_histories.setdefault(user_id, []).append(request)
         formatted_history = AIService.format_chat_history(chat_histories[user_id])
 
@@ -364,17 +426,28 @@ class AIService:
 
         result = response.choices[0].message.content
 
+        is_safe, severity = await AIService.check_llamaguard(result)
+        if not is_safe and severity >= 2:
+            result = "Sorry, that's beyond my current scope."
+
+        # Models like Qwen 3 generate thinking, discard it from the response.
+        result = re.sub(r"<think>.*?</think>", "", result, flags=re.DOTALL)
+
         chat_histories[user_id].append(result)
         return result
 
     @staticmethod
     async def generate_image(prompt: str) -> Optional[io.BytesIO | str]:
         """Generate an image from text prompt"""
+        is_safe, severity = await AIService.check_llamaguard(prompt)
+        if not is_safe and severity >= 2:
+            return "I'm sorry, but I cannot generate this image."
+        
         async with httpx.AsyncClient(timeout=60.0) as img_client:
             response = await img_client.post(
                 "https://ir-api.myqa.cc/v1/openai/images/generations",
                 json={
-                    "model": "HiDream-ai/HiDream-I1-Full:free",
+                    "model": "openai/gpt-image-1.5:free",
                     "prompt": prompt,
                 },
                 headers={
@@ -641,7 +714,11 @@ class AIImage(
         await ctx.defer(ephemeral=False)
 
         image = await AIService.generate_image(self.prompt)
-        await ctx.respond(attachments=[image])
+
+        if isinstance(image, io.BytesIO):  # image generated
+            await ctx.respond(attachments=[image])
+        else:  # blocked by security
+            await ctx.respond(image)
 
 
 @ai_group.register()
