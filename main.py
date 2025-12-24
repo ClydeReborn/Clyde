@@ -164,7 +164,11 @@ async def on_command_error(exc: lightbulb.exceptions.ExecutionPipelineFailedExce
 @bot.listen(hikari.MessageCreateEvent)
 async def on_message(event):
     content = event.message.content
-    channel = event.get_channel()
+    if isinstance(event, hikari.GuildMessageCreateEvent):
+        channel = event.get_channel()
+    else:
+        channel = event.author
+
     reply = event.message.referenced_message
 
     if isinstance(content, str) and (
@@ -175,7 +179,10 @@ async def on_message(event):
         async with bot.rest.trigger_typing(channel):
             cleaned_content = re.sub(fr'<@(!)?{event.app.cache.get_me().id}>', '', content)
 
-            filled_prompt = DEFAULT_PROMPT.format("Lunal", event.get_channel().name, event.get_guild().name)
+            if isinstance(event, hikari.GuildMessageCreateEvent):
+                filled_prompt = DEFAULT_PROMPT.format("Lunal", event.get_channel().name, event.get_guild().name)
+            else:
+                filled_prompt = DEFAULT_PROMPT.format("Lunal", "", "")
 
             message = await AIService.generate_text_with_gemini(
                 cleaned_content, DEFAULT_MODEL, filled_prompt, event.message.author.id, None
@@ -465,6 +472,8 @@ class AIService:
             image_data = await img_client.get(data["data"][0]["url"])
             image = io.BytesIO(image_data.content)
             image.seek(0)
+
+            logging.info(f"MIME type: {Image.MIME.get(image.format)}")
 
             return image
 
