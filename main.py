@@ -135,6 +135,21 @@ async def init_db():
                 member_count INTEGER
             )
             """)
+
+            await db.execute("""
+            CREATE TABLE IF NOT EXISTS model_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                model TEXT,
+                guild_id INTEGER,
+                tps REAL,
+                ttft REAL,
+                status TEXT,
+                error_type TEXT,
+                tokens INTEGER
+            )
+            """)  # TODO: record data here over time
+
             await db.commit()
         data_logger.info("[STATS] data DB created")
 
@@ -389,11 +404,11 @@ class AIService:
 
         # Choose API call depending on model
         if "gemma" in model.lower():
-            response = gemini_client.models.generate_content(
+            response = await gemini_client.aio.models.generate_content(
                 model=model, contents=history
             )
         else:
-            response = gemini_client.models.generate_content(
+            response = await gemini_client.aio.models.generate_content(
                 model=model, config=config, contents=history
             )
 
