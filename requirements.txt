@@ -5,7 +5,6 @@ hikari-miru>=4.0.0
 httpx
 groq
 google-genai
-google-generativeai
 
 python-dotenv
 

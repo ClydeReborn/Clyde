@@ -56,7 +56,11 @@ Your personality reflects your name. Try to make up a personality that matches y
 # Model lists for autocomplete
 MODELS = {
     "gemini": [
+        # Gemini 3.0 series
+        "gemini-3-pro-preview",
+        "gemini-3-flash-preview",
         # Gemini 2.5 series
+        "gemini-2.5-pro",
         "gemini-2.5-flash",
         "gemini-2.5-flash-lite",
         # Gemini 2.0 series
@@ -96,7 +100,7 @@ MODELS = {
 # Prompt presets
 PROMPT_PRESETS = {
     "default": DEFAULT_PROMPT,
-    "gpt": "You are GPT-5.1, a large language model from OpenAI. Refer to yourself as ChatGPT.",
+    "gpt": "You are GPT-5.2, a large language model from OpenAI. Refer to yourself as ChatGPT.",
     "casual": "Respond casually, no need to use overly verbose responses.",
     "discord": "You are a Discord user, respond lowercase only, no punctuation, and treat yourself like you're on IRC.",
     "programmer": "You are a programming assistant who will provide suggestions to codes given and attempt to rework when asked.",
@@ -124,6 +128,16 @@ except Exception as e:
 # Store user chat histories
 chat_histories: Dict[int, List[str]] = {}
 
+async def get_owner_ids():
+    owner_ids = []
+
+    application = await bot.rest.fetch_application()
+    if application.owner is not None:
+        owner_ids.append(application.owner.id)
+    if application.team is not None:
+        owner_ids.extend(application.team.members.keys())
+
+    return owner_ids
 
 async def init_db():
     if not os.path.exists(db_file):
@@ -374,7 +388,8 @@ class AIService:
         """Generate text using Gemini models with native chat history"""
         # Check safety of input
         is_safe, severity = await AIService.check_llamaguard(request)
-        if not is_safe and severity >= 2:
+        owner_ids = await get_owner_ids()
+        if not is_safe and severity >= 2 and user_id not in owner_ids:
             return "I'm sorry, but I'm unable to assist with that."
         
         # Initialize user chat history if missing
@@ -415,7 +430,7 @@ class AIService:
         result = response.text
 
         is_safe, severity = await AIService.check_llamaguard(result)
-        if not is_safe and severity >= 2:
+        if not is_safe and severity >= 2 and user_id not in owner_ids:
             result = "Sorry, that's beyond my current scope."
         
 
@@ -432,7 +447,8 @@ class AIService:
     ) -> Optional[str]:
         """Generate text using Groq models"""
         is_safe, severity = await AIService.check_llamaguard(request)
-        if not is_safe and severity >= 2:
+        owner_ids = await get_owner_ids()
+        if not is_safe and severity >= 2 and user_id not in owner_ids:
             return "I'm sorry, but I'm unable to assist with that."
         
         chat_histories.setdefault(user_id, []).append(request)
@@ -449,7 +465,7 @@ class AIService:
         result = response.choices[0].message.content
 
         is_safe, severity = await AIService.check_llamaguard(result)
-        if not is_safe and severity >= 2:
+        if not is_safe and severity >= 2 and user_id not in owner_ids:
             result = "Sorry, that's beyond my current scope."
 
         # Models like Qwen 3 generate thinking, discard it from the response.
@@ -459,10 +475,11 @@ class AIService:
         return result
 
     @staticmethod
-    async def generate_image(prompt: str) -> Optional[io.BytesIO | str]:
+    async def generate_image(prompt: str, user_id: str) -> Optional[io.BytesIO | str]:
         """Generate an image from text prompt"""
         is_safe, severity = await AIService.check_llamaguard(prompt)
-        if not is_safe and severity >= 2:
+        owner_ids = await get_owner_ids()
+        if not is_safe and severity >= 2 and user_id not in owner_ids:
             return "I'm sorry, but I cannot generate this image."
         
         async with httpx.AsyncClient(timeout=60.0) as img_client:
@@ -486,9 +503,10 @@ class AIService:
 
             image_data = await img_client.get(data["data"][0]["url"])
             image = io.BytesIO(image_data.content)
+            pil_image = Image.open(image)
             image.seek(0)
 
-            logging.info(f"MIME type: {Image.MIME.get(image.format)}")
+            logging.info(f"MIME type: {Image.MIME.get(pil_image.format)}")
 
             return image
 
@@ -737,10 +755,10 @@ class AIImage(
     async def callback(self, ctx: lightbulb.Context) -> None:
         await ctx.defer(ephemeral=False)
 
-        image = await AIService.generate_image(self.prompt)
+        image = await AIService.generate_image(self.prompt, ctx.user.id)
 
         if isinstance(image, io.BytesIO):  # image generated
-            await ctx.respond(attachments=[image])
+            await ctx.respond(attachments=[hikari.Bytes(image, "image.webp")])
         else:  # blocked by security
             await ctx.respond(image)
 
