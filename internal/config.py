@@ -134,7 +134,7 @@ S4 > S1/S9 > S3 > S11 > S2 > S5 > S12 > S8 > S7 > S10 > S14 > S13 > S6
 MODELS: dict[str, list[str]] = {
     "gemini": [
         # Gemini 3.1 series
-        "gemini-3.1-flash-lite-preview",  # current default until 3.1 Flash comes out
+        "gemini-3.1-flash-lite",  # current default until 3.1 Flash comes out
         "gemini-3.1-pro-preview",
         # Gemini 3.0 series
         "gemini-3-flash-preview",
