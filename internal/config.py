@@ -23,7 +23,7 @@ MAX_CHAT_HISTORY: int = 30
 IMAGE_USAGE_LIMIT_PER_USER: int | None = 10
 TEXT_USAGE_LIMIT_PER_USER: int | None = None
 
-DEFAULT_MODEL: str = "gemini-3.1-flash-lite-preview"
+DEFAULT_MODEL: str = "gemini-3.1-flash-lite"
 DEFAULT_PROMPT: str = """
 You are {}, a Discord chatbot.
 
