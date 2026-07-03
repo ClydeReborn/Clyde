@@ -151,12 +151,8 @@ MODELS: dict[str, list[str]] = {
     ],
     "other": [
         # Qwen models
-        "qwen/qwen3-32b",
-        # Llama 3.x series
-        "llama-3.1-8b-instant",
-        "llama-3.3-70b-versatile",
-        # Llama 4 series
-        "meta-llama/llama-4-scout-17b-16e-instruct",
+        "qwen/qwen3.6-27b",
+        # Llama models are no longer available for non-enterprise usage.
         # OpenAI open source models
         "openai/gpt-oss-120b",
         "openai/gpt-oss-20b",
@@ -166,6 +162,7 @@ MODELS: dict[str, list[str]] = {
     ],
 }
 
+# Balanced for quality and price on Image Router, can also use Nano Banana.
 DEFAULT_IMAGE_MODEL: str = "qwen-image-2512"
 IMAGE_MODELS: dict[str, str] = {
     "qwen-image-2512": "qwen/qwen-image-2512",
@@ -174,10 +171,11 @@ IMAGE_MODELS: dict[str, str] = {
     "nano-banana-2": "gemini-3.1-flash-image-preview",
 }
 
+# Do we need to maintain presets?
 PROMPT_PRESETS: dict[str, str] = {
     "default": DEFAULT_PROMPT,
     "gpt": (
-        "You are GPT-5.4, a large language model developed by OpenAI. "
+        "You are GPT-5.5, a large language model developed by OpenAI. "
         "Refer to yourself as ChatGPT when speaking in the first person."
     ),
     "casual": (
