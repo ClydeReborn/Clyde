@@ -120,7 +120,7 @@ class AIService:
 
         is_safe, severity = await AIService.check_llamaguard(request)
         owner_ids = await get_owner_ids()
-        if not is_safe and severity >= 2 and user_id not in owner_ids:
+        if not is_safe and user_id not in owner_ids:
             return "I'm sorry, but I'm unable to assist with that."
 
         chat_histories.setdefault(user_id, [])
@@ -173,7 +173,7 @@ class AIService:
             logger.info(f"TPS: {tps:.2f}")
 
         is_safe, severity = await AIService.check_llamaguard(raw_result)
-        if not is_safe and severity >= 2 and user_id not in owner_ids:
+        if not is_safe and user_id not in owner_ids:
             result = "Sorry, that's beyond my current scope."
 
         chat_histories[user_id].append(request)
@@ -194,7 +194,7 @@ class AIService:
         """Generate text using Groq models"""
         is_safe, severity = await AIService.check_llamaguard(request)
         owner_ids = await get_owner_ids()
-        if not is_safe and severity >= 2 and user_id not in owner_ids:
+        if not is_safe and user_id not in owner_ids:
             return "I'm sorry, but I'm unable to assist with that."
 
         chat_histories.setdefault(user_id, []).append(request)
@@ -235,7 +235,7 @@ class AIService:
         result = full_text
 
         is_safe, severity = await AIService.check_llamaguard(result)
-        if not is_safe and severity >= 2 and user_id not in owner_ids:
+        if not is_safe and user_id not in owner_ids:
             result = "Sorry, that's beyond my current scope."
 
         result = re.sub(r"<think>.*?</think>", "", result, flags=re.DOTALL)
@@ -254,7 +254,7 @@ class AIService:
         """Generate an image from text prompt"""
         is_safe, severity = await AIService.check_llamaguard(prompt)
         owner_ids = await get_owner_ids()
-        if not is_safe and severity >= 2 and user_id not in owner_ids:
+        if not is_safe and user_id not in owner_ids:
             return "I'm sorry, but I cannot generate this image."
 
         if model == "qwen-image-2512":

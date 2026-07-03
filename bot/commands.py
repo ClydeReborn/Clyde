@@ -42,6 +42,7 @@ from internal.config import (
     IMAGE_MODELS,
     WEEKLY_TOKEN_ALLOWANCE_PER_USER,
     chat_histories,
+    logger,
 )
 from internal.service import AIService, generate_text
 
@@ -80,33 +81,40 @@ class AIText(
         if modal_result is None:
             return
         request = modal_result.request
+        try:
+            resolved_prompt = PROMPT_PRESETS.get(self.prompt, self.prompt).format(
+                "Lunal", "", "", datetime.datetime.now()
+            )
 
-        resolved_prompt = PROMPT_PRESETS.get(self.prompt, self.prompt).format(
-            "Lunal", "", "", datetime.datetime.now()
-        )
+            response = await generate_text(
+                request, self.model, resolved_prompt, ctx.interaction.user.id
+            )
 
-        response = await generate_text(
-            request, self.model, resolved_prompt, ctx.interaction.user.id
-        )
+            if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
+                chunks = []
+                while response:
+                    split_idx = response.rfind("\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH)
 
-        if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
-            chunks = []
-            while response:
-                split_idx = response.rfind("\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH)
+                    if split_idx in [-1, 0]:
+                        split_idx = MAX_DISCORD_MESSAGE_LENGTH
 
-                if split_idx in [-1, 0]:
-                    split_idx = MAX_DISCORD_MESSAGE_LENGTH
+                    chunk = response[:split_idx].rstrip()
+                    response = response[split_idx:].lstrip()
+                    chunks.append(chunk)
+                view = AIView(chunks, modal_result.context.interaction)
+                await modal_result.context.edit_response(
+                    chunks[0], components=view.build()
+                )
+                inter_client.start_view(view)
+            else:
+                await modal_result.context.edit_response(response)
 
-                chunk = response[:split_idx].rstrip()
-                response = response[split_idx:].lstrip()
-                chunks.append(chunk)
-            view = AIView(chunks, modal_result.context.interaction)
-            await modal_result.context.edit_response(chunks[0], components=view.build())
-            inter_client.start_view(view)
-        else:
-            await modal_result.context.edit_response(response)
-
-        await increase_usage_limit(ctx.user.id, get_text_token_cost(self.model))
+            await increase_usage_limit(ctx.user.id, get_text_token_cost(self.model))
+        except Exception as exc:
+            logger.error("AI text modal flow failed: %s", exc)
+            await modal_result.context.edit_response(
+                "An internal error occurred while handling your request."
+            )
 
 
 @ai_group.register()
@@ -140,50 +148,60 @@ class AITextWithImage(
         if modal_result is None:
             return None
         request = modal_result.request
-
         try:
-            Image.open(io.BytesIO(await self.image.read()))
-        except (UnidentifiedImageError, IOError):
-            embed = hikari.Embed(
-                title="<:error:1368156499167150171> Error",
-                description="Please upload a valid image file.",
-                color=hikari.Color.from_hex_code("#ed4245"),
+            try:
+                Image.open(io.BytesIO(await self.image.read()))
+            except (UnidentifiedImageError, IOError):
+                embed = hikari.Embed(
+                    title="<:error:1368156499167150171> Error",
+                    description="Please upload a valid image file.",
+                    color=hikari.Color.from_hex_code("#ed4245"),
+                )
+                await modal_result.context.edit_response(embed=embed, components=[])
+                return None
+
+            resolved_prompt = PROMPT_PRESETS.get(self.prompt, self.prompt).format(
+                "Lunal", "", "", datetime.datetime.now()
             )
-            await modal_result.context.edit_response(embed=embed, components=[])
+
+            image_data = io.BytesIO(await self.image.read())
+
+            response = await generate_text(
+                request,
+                self.model,
+                resolved_prompt,
+                ctx.interaction.user.id,
+                image_data,
+            )
+
+            if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
+                chunks = []
+                while response:
+                    split_idx = response.rfind("\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH)
+
+                    if split_idx in [-1, 0]:
+                        split_idx = MAX_DISCORD_MESSAGE_LENGTH
+
+                    chunk = response[:split_idx].rstrip()
+                    response = response[split_idx:].lstrip()
+                    chunks.append(chunk)
+                view = AIView(chunks, interaction=modal_result.context.interaction)
+                await modal_result.context.edit_response(
+                    chunks[0], components=view.build()
+                )
+                inter_client.start_view(view)
+            else:
+                await modal_result.context.edit_response(response)
+
+            return await increase_usage_limit(
+                ctx.user.id, get_text_token_cost(self.model)
+            )
+        except Exception as exc:
+            logger.error("AI with-image modal flow failed: %s", exc)
+            await modal_result.context.edit_response(
+                "An internal error occurred while handling your request."
+            )
             return None
-
-        resolved_prompt = PROMPT_PRESETS.get(self.prompt, self.prompt).format(
-            "Lunal", "", "", datetime.datetime.now()
-        )
-
-        image_data = io.BytesIO(await self.image.read())
-
-        response = await generate_text(
-            request,
-            self.model,
-            resolved_prompt,
-            ctx.interaction.user.id,
-            image_data,
-        )
-
-        if len(response) > MAX_DISCORD_MESSAGE_LENGTH:
-            chunks = []
-            while response:
-                split_idx = response.rfind("\n\n", 0, MAX_DISCORD_MESSAGE_LENGTH)
-
-                if split_idx in [-1, 0]:
-                    split_idx = MAX_DISCORD_MESSAGE_LENGTH
-
-                chunk = response[:split_idx].rstrip()
-                response = response[split_idx:].lstrip()
-                chunks.append(chunk)
-            view = AIView(chunks, interaction=modal_result.context.interaction)
-            await modal_result.context.edit_response(chunks[0], components=view.build())
-            inter_client.start_view(view)
-        else:
-            await modal_result.context.edit_response(response)
-
-        return await increase_usage_limit(ctx.user.id, get_text_token_cost(self.model))
 
 
 @ai_group.register()
@@ -331,6 +349,7 @@ class Tokens(
     lightbulb.SlashCommand,
     name="tokens",
     description="Manage a user's weekly token balance",
+    hooks=[maintenance_check],
 ):
     action: str = lightbulb.string(
         "action",
@@ -498,17 +517,22 @@ class Maintenance(
         modal_result = await prompt_maintenance_modal(ctx, inter_client)
         if modal_result is None:
             return
+        try:
+            await set_maintenance_mode(modal_result.reason, parsed_end_date)
 
-        await set_maintenance_mode(modal_result.reason, parsed_end_date)
-
-        end_text = (
-            f"<t:{int(parsed_end_date.timestamp())}:F> (<t:{int(parsed_end_date.timestamp())}:R>)"
-            if parsed_end_date is not None
-            else "Permanent"
-        )
-        await modal_result.context.edit_response(
-            f"Maintenance mode enabled.\nEnds: {end_text}\nMessage: {modal_result.reason}",
-        )
+            end_text = (
+                f"<t:{int(parsed_end_date.timestamp())}:F> (<t:{int(parsed_end_date.timestamp())}:R>)"
+                if parsed_end_date is not None
+                else "Permanent"
+            )
+            await modal_result.context.edit_response(
+                f"Maintenance mode enabled.\nEnds: {end_text}\nMessage: {modal_result.reason}",
+            )
+        except Exception as exc:
+            logger.error("Maintenance modal flow failed: %s", exc)
+            await modal_result.context.edit_response(
+                "An internal error occurred while enabling maintenance mode."
+            )
 
 
 loader.command(ai_group)
