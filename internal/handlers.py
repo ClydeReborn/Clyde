@@ -44,25 +44,38 @@ def exponential(retry_cnt: int, retry_min: int, retry_max: int):
 
 
 async def init_logs_db():
-    if not os.path.exists(logs_db_file):
-        async with aiosqlite.connect(logs_db_file) as db:
-            await db.execute("""
-            CREATE TABLE IF NOT EXISTS daily_usage (
-                day_date TEXT NOT NULL,
-                uid TEXT NOT NULL,
-                feature TEXT NOT NULL,
-                used INTEGER NOT NULL DEFAULT 0,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (day_date, uid, feature)
-            );
-            """)
+    db_previously_exists = os.path.exists(logs_db_file)
 
-            await db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_daily_usage_uid_day
-            ON daily_usage (uid, day_date);
-            """)
+    async with aiosqlite.connect(logs_db_file) as db:
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS weekly_token_usage (
+            week_start TEXT NOT NULL,
+            uid TEXT NOT NULL,
+            used_tokens INTEGER NOT NULL DEFAULT 0,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (week_start, uid)
+        );
+        """)
 
-            await db.commit()
+        await db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_weekly_token_usage_uid_week
+        ON weekly_token_usage (uid, week_start);
+        """)
+
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS maintenance_mode (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            active INTEGER NOT NULL DEFAULT 0,
+            message TEXT,
+            started_at TEXT,
+            end_at TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        await db.commit()
+
+    if not db_previously_exists:
         data_logger.info("[STATS] log DB created")
 
 

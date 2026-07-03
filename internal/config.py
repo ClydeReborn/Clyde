@@ -20,8 +20,7 @@ chat_histories: dict[int, list[str]] = {}
 MAX_DISCORD_MESSAGE_LENGTH: int = 2000
 MAX_CHAT_HISTORY: int = 30
 
-IMAGE_USAGE_LIMIT_PER_USER: int | None = 10
-TEXT_USAGE_LIMIT_PER_USER: int | None = None
+WEEKLY_TOKEN_ALLOWANCE_PER_USER: int = 100
 
 DEFAULT_MODEL: str = "gemini-3.1-flash-lite"
 DEFAULT_PROMPT: str = """
@@ -169,6 +168,29 @@ IMAGE_MODELS: dict[str, str] = {
     "nano-banana": "gemini-2.5-flash-image",
     "nano-banana-pro": "gemini-3-pro-image-preview",
     "nano-banana-2": "gemini-3.1-flash-image-preview",
+}
+
+TEXT_MODEL_TOKEN_COSTS: dict[str, int] = {
+    "gemini-3.1-flash-lite": 1,
+    "gemini-2.5-flash-lite": 1,
+    "openai/gpt-oss-20b": 1,
+    "groq/compound-mini": 1,
+    "gemini-3-flash-preview": 2,
+    "gemini-2.5-pro": 2,
+    "gemini-2.5-flash": 2,
+    "gemma-4-26b-a4b-it": 2,
+    "qwen/qwen3.6-27b": 2,
+    "groq/compound": 2,
+    "gemini-3.1-pro-preview": 3,
+    "gemma-4-31b-it": 3,
+    "openai/gpt-oss-120b": 3,
+}
+
+IMAGE_MODEL_TOKEN_COSTS: dict[str, int] = {
+    "qwen-image-2512": 10,
+    "nano-banana": 15,
+    "nano-banana-2": 15,
+    "nano-banana-pro": 20,
 }
 
 # Do we need to maintain presets?

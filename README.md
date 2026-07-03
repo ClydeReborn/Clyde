@@ -18,6 +18,19 @@ Clyde can now generate images, provided by [Image Router](https://ir.myqa.cc). P
 Clyde supports the free plans of Groq and Gemini APIs, as well as the Image Router API. However, Image Router requires a one-time deposit to activate the free plan.<br>
 Clyde currently uses the billed plans of said services, however most features should work on the free plans too.
 
+### Usage Allowance
+Users receive 100 tokens per week. The allowance resets weekly, does not roll over, and bot owners are exempt from the limit.
+
+Text model pricing:
+- Cheap models cost 1 token
+- Standard models cost 2 tokens
+- Expensive reasoning models cost 3 tokens
+
+Image model pricing:
+- `qwen-image-2512`: 10 tokens
+- `nano-banana` and `nano-banana-2`: 15 tokens
+- `nano-banana-pro`: 20 tokens
+
 ## How to run?
 #### Steps Required
 1. Clone this repo.

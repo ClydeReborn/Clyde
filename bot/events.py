@@ -14,12 +14,20 @@ from internal.config import (
     DEFAULT_PROMPT,
     DEFAULT_MODEL,
     MAX_DISCORD_MESSAGE_LENGTH,
+    WEEKLY_TOKEN_ALLOWANCE_PER_USER,
     stats_db_file,
     data_logger,
     logger,
 )
 from internal.handlers import init_stats_db, init_logs_db
-from internal.limits import increase_usage_limit, UsageLimitExceeded
+from internal.limits import (
+    OwnerOnlyCommand,
+    UsageLimitExceeded,
+    ensure_token_allowance,
+    get_text_token_cost,
+    increase_usage_limit,
+)
+from internal.maintenance import MaintenanceModeActive, ensure_maintenance_access
 from internal.service import AIService
 
 loader = lightbulb.Loader()
@@ -42,14 +50,35 @@ async def on_command_error(
         await ctx.respond(em, flags=64)
         return True
     elif isinstance(exc.__cause__, UsageLimitExceeded):
-        now = datetime.datetime.now(datetime.timezone.utc)
-        m_utc = (now + datetime.timedelta(days=1)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
         e = hikari.Embed(
-            title="Usage Limit Reached",
-            description=f"You can use this command again <t:{int(m_utc.timestamp())}:R>",
+            title="Weekly Token Allowance Reached",
+            description=(
+                f"This request costs **{exc.__cause__.required_tokens}** token(s), but "
+                f"you only have **{exc.__cause__.remaining_tokens}** left out of "
+                f"**{WEEKLY_TOKEN_ALLOWANCE_PER_USER}** this week.\n"
+                f"Your balance resets <t:{exc.__cause__.reset_at}:R>."
+            ),
+            color=hikari.Color.from_hex_code("#5865f2"),
+        )
+        await ctx.respond(embed=e, flags=64)
+        return True
+    elif isinstance(exc.__cause__, OwnerOnlyCommand):
+        e = hikari.Embed(
+            title="Owner Only",
+            description="Only bot owners can use this command.",
+            color=hikari.Color.from_hex_code("#5865f2"),
+        )
+        await ctx.respond(embed=e, flags=64)
+        return True
+    elif isinstance(exc.__cause__, MaintenanceModeActive):
+        end_text = (
+            f"\nEnds: <t:{exc.__cause__.end_at}:R>."
+            if exc.__cause__.end_at is not None
+            else "\nEnds: This maintenance window is currently permanent."
+        )
+        e = hikari.Embed(
+            title="Maintenance Mode",
+            description=f"{exc.__cause__.message}{end_text}",
             color=hikari.Color.from_hex_code("#5865f2"),
         )
         await ctx.respond(embed=e, flags=64)
@@ -93,7 +122,26 @@ async def on_message(event, bot: hikari.GatewayBot):
         and not event.author.is_bot
     ):
         async with bot.rest.trigger_typing(channel):
+            try:
+                await ensure_maintenance_access(event.author.id)
+            except MaintenanceModeActive as exc:
+                end_text = (
+                    f"\nEnds: <t:{exc.end_at}:R>."
+                    if exc.end_at is not None
+                    else "\nEnds: This maintenance window is currently permanent."
+                )
+                return await channel.send(f"{exc.message}{end_text}")
+
             cleaned_content = re.sub(rf"<@(!)?{bot.cache.get_me().id}>", "", content)
+            token_cost = get_text_token_cost(DEFAULT_MODEL)
+            try:
+                await ensure_token_allowance(event.author.id, token_cost)
+            except UsageLimitExceeded as exc:
+                return await channel.send(
+                    "You've used up your weekly token allowance. "
+                    f"This reply needs {exc.required_tokens} token(s), "
+                    f"and your balance resets <t:{exc.reset_at}:R>."
+                )
 
             if isinstance(event, hikari.GuildMessageCreateEvent):
                 filled_prompt = DEFAULT_PROMPT.format(
@@ -122,6 +170,7 @@ async def on_message(event, bot: hikari.GatewayBot):
                     "The response was too long.\nUse the slash command to see longer responses."
                 )
 
+            await increase_usage_limit(event.author.id, token_cost)
             return await channel.send(message)
     else:
         return None
